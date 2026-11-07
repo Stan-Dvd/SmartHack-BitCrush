@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: urbanev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: urbanev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - urbanev_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d urbanev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  urbanev_pgdata:
