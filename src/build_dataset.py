@@ -19,7 +19,12 @@ def build_station_features() -> pd.DataFrame:
     st = station_features(info)
     comp = competition_features(info, info)
     poi = poi_features(info, load_poi())
-    pop = population_features(info)
+    if C.WORLDPOP_CROP.exists():
+        pop = population_features(info)
+    else:
+        print(f"AVERTISMENT: lipsește {C.WORLDPOP_CROP.relative_to(C.ROOT)} (rulează python -m src.download); "
+              "pop_1km = NaN, se poate antrena doar cu --feature-set base")
+        pop = pd.DataFrame({"pop_1km": float("nan")}, index=info.index)
     feats = pd.concat(
         [info[["station_id", "TAZID", "latitude", "longitude"]].rename(columns={"TAZID": "zone_id"}),
          comp, pop, poi, st.drop(columns="station_id")],
@@ -41,7 +46,8 @@ def build_dataset(rebuild_target: bool = True) -> pd.DataFrame:
 
     # verificări anti-leakage și de integritate
     assert not (set(C.FEATURES) & C.FORBIDDEN_FEATURES), "feature interzis în FEATURES"
-    assert table[C.FEATURES + [C.TARGET]].notna().all().all(), "NaN în feature-uri sau țintă"
+    must_be_complete = [f for f in C.FEATURES if f != "pop_1km" or C.WORLDPOP_CROP.exists()]
+    assert table[must_be_complete + [C.TARGET]].notna().all().all(), "NaN în feature-uri sau țintă"
     assert not table.duplicated(["station_id", "hour", "is_weekend"]).any()
     assert table.groupby("station_id")["zone_id"].nunique().max() == 1
 

@@ -1,0 +1,37 @@
+{
+  "features": [
+    "dist_nearest_station_m",
+    "n_stations_500m",
+    "n_stations_1km",
+    "n_stations_3km",
+    "competitor_piles_1km",
+    "n_piles",
+    "power_kw",
+    "hour",
+    "is_weekend"
+  ],
+  "feature_set": "base",
+  "monotone": false,
+  "params": {
+    "learning_rate": 0.05,
+    "num_leaves": 15,
+    "min_child_samples": 50,
+    "feature_fraction": 0.8,
+    "bagging_fraction": 1.0,
+    "seed": 42,
+    "deterministic": true,
+    "force_col_wise": true,
+    "num_threads": 8,
+    "verbose": -1,
+    "objective": "tweedie",
+    "tweedie_variance_power": 1.5,
+    "metric": "l1"
+  },
+  "num_boost_round": 147,
+  "cv_mae": 1.7821453986767346,
+  "cv_mae_std": 0.12592470972212555,
+  "b1_cv_mae": 1.8759933205685715,
+  "n_train_rows": 53381,
+  "n_train_stations": 1114,
+  "n_train_zones": 254
+}
