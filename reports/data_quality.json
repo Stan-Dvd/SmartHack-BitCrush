@@ -1,0 +1,46 @@
+{
+  "coverage_min": 0.7,
+  "min_cell_obs": 10,
+  "stations_raw": 1682,
+  "stations_removed_no_data": 21,
+  "stations_removed_low_coverage": 238,
+  "stations_kept": 1423,
+  "cells_possible_for_kept_stations": 68304,
+  "cells_present_for_kept_stations": 68235,
+  "cells_missing_entirely": 69,
+  "cells_removed_few_obs": 38,
+  "cells_kept": 68197,
+  "stations_with_all_48_cells": 1408,
+  "stations_busy_plus_idle_not_constant": 0,
+  "stations_busy_plus_idle_ne_charge_count": 0,
+  "coverage_kept_stations": {
+    "count": 1423.0,
+    "mean": 0.8809,
+    "std": 0.1078,
+    "min": 0.7007,
+    "25%": 0.7391,
+    "50%": 0.9438,
+    "75%": 0.981,
+    "max": 0.9999
+  },
+  "n_obs_per_cell": {
+    "count": 68197.0,
+    "mean": 958.11,
+    "std": 429.59,
+    "min": 10.0,
+    "25%": 588.0,
+    "50%": 624.0,
+    "75%": 1464.0,
+    "max": 1548.0
+  },
+  "y_summary": {
+    "count": 68197.0,
+    "mean": 3.5808,
+    "std": 5.8253,
+    "min": 0.0,
+    "25%": 0.6754,
+    "50%": 1.6198,
+    "75%": 3.8668,
+    "max": 69.6259
+  }
+}
