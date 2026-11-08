@@ -17,18 +17,26 @@ from src.features_spatial import (
 )
 from src.features_osm import osm_features
 from src.features_station import station_features
-from src.load_urbanev import load_poi, load_station_info
+from src.load_urbanev import canonical_station_ids, load_poi, load_station_info
 from src.target import build_target
 
 
-def build_station_features() -> pd.DataFrame:
+def build_station_features(dedup: bool = C.DEDUP_INFRA, save: bool = True) -> pd.DataFrame:
     info = load_station_info()
+    # infrastructura pentru competiție: toate înregistrările sau, cu DEDUP_INFRA, câte una per stație fizică
+    if dedup:
+        cov = pd.read_parquet(C.STATION_STATS_FILE).set_index("station_id")["coverage"]
+        canon = canonical_station_ids(info, cov)
+        infra = info[info["station_id"].isin(set(canon))]
+        query = info.assign(station_id=canon.to_numpy())  # dublura stației nu e numărată ca concurent
+    else:
+        infra, query = info, info
     st = station_features(info)
-    comp = competition_features(info, info)
+    comp = competition_features(query, infra)
     poi_df = load_poi()
     poi = poi_features(info, poi_df)
     poi_1km = poi_features(info, poi_df, radius_m=1000)
-    wcomp = weighted_competition(info, info)
+    wcomp = weighted_competition(query, infra)
     if C.WORLDPOP_CROP.exists():
         pop = population_features(info, radii=C.POP_RADII_M)
     else:
@@ -47,7 +55,8 @@ def build_station_features() -> pd.DataFrame:
         print(f"AVERTISMENT: lipsește {C.OSM_PBF.relative_to(C.ROOT)} (rulează python -m src.download); "
               "feature-urile OSM = NaN")
         feats = feats.assign(**{f: float("nan") for f in C.CANDIDATE_OSM})
-    feats.to_parquet(C.STATION_FEATURES_FILE, index=False)
+    if save:
+        feats.to_parquet(C.STATION_FEATURES_FILE, index=False)
     return feats
 
 

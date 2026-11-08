@@ -1,0 +1,84 @@
+{
+  "A_B": {
+    "B1": {
+      "cv_mae": 1.8539464165779513,
+      "spearman_occupancy_rate": null,
+      "spearman_daily_demand": 0.7104757405649593
+    },
+    "note_B1": "B1 prezice aceeași rată de ocupare pentru toate stațiile (std 0.0025)",
+    "full": {
+      "cv_mae": 1.661631223451355,
+      "spearman_occupancy_rate": 0.22410538287511245,
+      "spearman_daily_demand": 0.7163316436686087,
+      "features": [
+        "dist_nearest_station_m",
+        "n_stations_500m",
+        "n_stations_1km",
+        "n_stations_3km",
+        "competitor_piles_1km",
+        "pop_1km",
+        "poi_food_500m",
+        "poi_business_res_500m",
+        "poi_lifestyle_500m",
+        "n_piles",
+        "power_kw",
+        "hour",
+        "is_weekend"
+      ]
+    },
+    "location_only": {
+      "cv_mae": 1.7904564589017735,
+      "spearman_occupancy_rate": 0.18430632498994032,
+      "spearman_daily_demand": 0.7168071060854506,
+      "features": [
+        "dist_nearest_station_m",
+        "n_stations_500m",
+        "n_stations_1km",
+        "n_stations_3km",
+        "competitor_piles_1km",
+        "pop_1km",
+        "poi_food_500m",
+        "poi_business_res_500m",
+        "poi_lifestyle_500m",
+        "hour",
+        "is_weekend"
+      ]
+    },
+    "dedup_infrastructure": {
+      "cv_mae": 1.6731885594528273,
+      "cv_mae_reference": 1.6615631256079482,
+      "delta_vs_reference": 0.011625433844879574,
+      "folds_better_than_reference": 3,
+      "n_changed_stations": 967
+    }
+  },
+  "C_within_site": {
+    "radius_m": 100,
+    "n_stations_in_multi_station_sites": 256,
+    "n_sites": 113,
+    "n_pairs_bigger_vs_smaller": 139,
+    "share_pairs_bigger_has_higher_occupancy_real": 0.5539568345323741,
+    "share_pairs_bigger_has_higher_occupancy_model": 0.5035971223021583,
+    "slope_occ_per_doubling_piles": {
+      "within_site_real": 0.0009370456789496962,
+      "within_site_real_ci95": [
+        -0.02286302549697397,
+        0.026218761056038334
+      ],
+      "within_site_model": 3.538391085349751e-05,
+      "between_sites_real": 0.020365419373303575,
+      "between_sites_model": 0.01746090771644155
+    },
+    "slope_occ_per_doubling_power": {
+      "within_site_real": 0.0020848781629130187,
+      "within_site_real_ci95": [
+        -0.027040709552812885,
+        0.059091796138554885
+      ],
+      "within_site_model": 0.0330379136294167,
+      "between_sites_real": 0.03294744890977894,
+      "between_sites_model": 0.032452507925100876
+    },
+    "mean_occupancy": 0.23980050139168443
+  }
+}

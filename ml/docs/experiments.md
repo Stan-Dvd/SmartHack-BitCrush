@@ -111,3 +111,41 @@ Ce greșește modelul nu se explică prin densitate, rază, tipul terenului din 
 **Alte observații:**
 - Acoperirea OSM în China e slabă: doar ~10% din grila Shenzhen are landuse marcat, iar clădirile sunt ~170 de mii, cu mult sub numărul real. În România OSM e mult mai complet, deci aceste feature-uri pot deveni utile acolo. Codul rămâne în `src/features_osm.py`.
 - Stațiile cu acoperire 50–70% strică modelul: medii calculate pe mai puține zile sunt mai zgomotoase. Pragul de 70% e confirmat.
+
+## De ce contează atât de mult `n_piles` și `power_kw`? (`python -m src.size_experiments`)
+
+Toate cele trei experimente folosesc doar stațiile din train, cu predicții out-of-fold (CV pe zone). Testul nu a fost folosit. Rezultatele sunt în `reports/size_experiments.json`.
+
+### A. Cât explică locul singur
+
+| Model | CV MAE | Spearman rata de ocupare pe stație | Spearman cererea zilnică pe stație |
+|---|---|---|---|
+| B1 (ocupare medie × `n_piles`) | 1,854 | — (aceeași rată pentru toate stațiile) | 0,710 |
+| doar locație (fără `n_piles`/`power_kw` ca feature; `n_piles` rămâne multiplicator) | 1,791 | 0,184 | 0,717 |
+| modelul final | 1,662 | 0,224 | 0,716 |
+
+- Locul singur aduce un câștig de 3,4% față de B1. Folosirea lui `n_piles` și `power_kw` în rata de ocupare mai aduce încă ~7%. **Două treimi din câștigul modelului vin din caracteristicile stației, nu din locație.**
+- Capacitatea de a spune care locații au ocupare *procentuală* mare e slabă: Spearman 0,18 doar din locație și 0,22 cu modelul complet.
+- Clasarea după cererea zilnică (~0,71–0,72) e practic identică la toate trei modelele, pentru că e dominată de multiplicatorul `n_piles`.
+
+### B. Dublurile din infrastructură
+
+Am găsit 101 perechi de înregistrări cu aceleași coordonate și același număr de puncte lente și rapide; în 81 dintre ele, una are sub 5% date. E aceeași stație fizică sub două ID-uri. Ele umflă feature-urile de competiție (de exemplu, `dist_nearest_station_m = 0`).
+
+Am recalculat competiția cu o singură înregistrare per stație fizică (`DEDUP_INFRA` în `config.py`, funcția `canonical_station_ids` din `load_urbanev.py`). Rezultat: CV MAE 1,673, față de 1,662 (Δ +0,012, mai bun în doar 3/5 fold-uri). **Nu am adoptat-o.** Prezența dublurilor pare să poarte puțină informație (stații migrate sau reînregistrate). Pentru România, unde infrastructura nu va avea astfel de dubluri, efectul merită reverificat.
+
+### C. Experimentul natural: mărimea la locație practic fixă
+
+Am construit **micro-situri** din stații diferite (dublurile eliminate) aflate la cel mult 100 m una de alta: 113 micro-situri, 256 de stații, 139 de perechi „mare față de mică”. Am estimat panta ratei de ocupare față de log2(puncte) și log2(putere) cu efecte fixe pe micro-sit, adică comparând doar stații de pe același micro-sit. Intervalele de încredere vin din bootstrap pe micro-situri.
+
+| Efect asupra ratei de ocupare | În același micro-sit (real) | În același micro-sit (model) | Între situri (real) | Între situri (model) |
+|---|---|---|---|---|
+| la dublarea numărului de puncte | **+0,001** (IC95 −0,023…+0,026) | +0,000 | **+0,020** | +0,017 |
+| la dublarea puterii | **+0,002** (IC95 −0,027…+0,059) | +0,033 | **+0,033** | +0,032 |
+
+La o ocupare medie de ~0,22, +0,02 înseamnă aproximativ +9% relativ.
+
+- **Între situri**, stațiile mai mari și mai puternice sunt mai pline. **În același micro-sit**, nu: estimarea e centrată pe zero. În 55% din perechi stația mai mare e mai plină, practic o aruncare de monedă.
+- Interpretare: efectul lui `n_piles` și `power_kw` din model vine din **unde** sunt construite stațiile mari și rapide, nu din mărimea sau puterea în sine. Asta confirmă ipoteza de selection bias. Pentru `n_piles`, modelul reproduce corect ambele niveluri: zero în sit, pozitiv între situri. Pentru `power_kw`, modelul aplică și în interiorul sitului efectul de +0,033 văzut între situri, efect care în date nu apare.
+- **Limită:** intervalele sunt largi și conțin și valorile dintre situri, deci datele nu exclud un efect cauzal mic. Concluzia sigură e că nu există *dovezi* că mărimea sau puterea cresc rata de ocupare la locație fixă.
+- **Consecința pentru agent:** la o locație dată, rata de ocupare trebuie tratată ca proprietate a locului. O variantă e ca agentul să o ia din modelul „doar locație” sau din modelul complet evaluat la mărimea și puterea tipice din zonă, nu la valorile alese de agent. Cererea servită crește atunci aproximativ proporțional cu numărul de puncte, până la limita cererii locului, pe care datele nu o arată. Peste ea trebuie pusă o limită explicită sau o logică de saturare.

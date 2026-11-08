@@ -43,3 +43,17 @@ def read_station_series(station_id: int, usecols=("time", "busy", "idle")) -> pd
     if "time" in df:
         df["time"] = pd.to_datetime(df["time"])
     return df
+
+
+def canonical_station_ids(info: pd.DataFrame, coverage: pd.Series) -> pd.Series:
+    """station_id -> ID-ul canonic al stației fizice.
+
+    Înregistrările cu aceleași coordonate și același (slow_count, fast_count) sunt tratate ca aceeași stație
+    fizică; ID-ul canonic e cel cu acoperirea cea mai mare (la egalitate, ID-ul cel mai mic).
+    """
+    d = info[["station_id", "longitude", "latitude", "slow_count", "fast_count"]].copy()
+    d["coverage"] = d["station_id"].map(coverage).fillna(0.0)
+    d = d.sort_values(["coverage", "station_id"], ascending=[False, True])
+    key = ["longitude", "latitude", "slow_count", "fast_count"]
+    canon = d.groupby(key)["station_id"].transform("first")
+    return pd.Series(canon.to_numpy(), index=d["station_id"].to_numpy()).reindex(info["station_id"])

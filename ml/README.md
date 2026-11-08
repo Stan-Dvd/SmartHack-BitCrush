@@ -50,6 +50,10 @@ După faza 1 am testat în CV 22 de candidați: stațiile cu acoperire 50–70%,
 
 Un diagnostic out-of-fold arată că eroarea rămasă a modelului nu e corelată cu niciun feature disponibil (|ρ| ≤ 0,06), dar e corelată cu **prețul** stației (ρ = −0,22), exclus intenționat din model. Detalii în [docs/experiments.md](docs/experiments.md#îmbunătățiri-încercate-după-faza-1-niciuna-adoptată).
 
+### De unde vine efectul lui `n_piles` și `power_kw`
+
+Am comparat stații diferite aflate la cel mult 100 m una de alta (113 micro-situri). În același loc, stația mai mare sau mai puternică **nu** e mai plină procentual: efect +0,001 la dublarea numărului de puncte, față de +0,020 între situri diferite. Efectul învățat de model vine deci din unde au construit operatorii stațiile mari, nu din mărime. Un model doar de locație aduce o treime din câștigul față de B1. Detalii în [docs/experiments.md](docs/experiments.md#de-ce-contează-atât-de-mult-n_piles-și-power_kw-python--m-srcsize_experiments).
+
 ## Rulare
 
 Cerințe: Python 3.13 (testat cu 3.13.9), aproximativ 6 GB de date brute și 4,5 GB temporar pentru WorldPop.
@@ -67,6 +71,7 @@ python -m src.evaluate        # B0, B1, LightGBM pe test -> reports/metrics.json
 python -m src.analysis        # erori, SHAP, ICE/PD, saturare -> reports/figures/, reports/analysis.json
 python -m src.experiments     # ablații și verificări de robustețe (doar CV) -> reports/experiments.json
 python -m src.experiments --candidates   # feature-urile candidate (doar CV) -> reports/experiments_candidates.json
+python -m src.size_experiments           # efectul mărimii/puterii: model doar de locație, dubluri, micro-situri
 ```
 
 Tot fluxul durează aproximativ 3 minute pe 16 nuclee, fără descărcarea WorldPop.

@@ -58,6 +58,9 @@ COVERAGE_MIN_EXTRA = 0.50
 USE_EXTRA_TRAIN = False
 MIN_CELL_OBS = 10  # celulele (stație, oră, is_weekend) cu mai puține intervale sunt eliminate
 STUCK_FULL_SHARE = 0.95  # stații cu toate punctele ocupate în >95% din intervale: serie blocată, eliminată
+# dubluri: înregistrări cu aceleași coordonate și același număr de puncte lente/rapide = aceeași stație fizică
+# (de obicei una are <5% date). Cu True, competiția se calculează pe o singură înregistrare per stație fizică.
+DEDUP_INFRA = False
 
 # --- feature-uri pe raze (metri) ---
 EARTH_RADIUS_M = 6_371_008.8
