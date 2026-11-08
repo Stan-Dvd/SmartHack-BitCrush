@@ -68,31 +68,38 @@ def build_target():
 
     n_all = len(stats)
     no_data = stats["n_available"] == 0
-    low_cov = (~no_data) & (stats["coverage"] < C.COVERAGE_MIN)
+    low_cov = (~no_data) & (stats["coverage"] < C.COVERAGE_MIN_EXTRA)
     # serii „blocate pe plin”: toate punctele ocupate aproape permanent timp de luni -> artefact de raportare
     stuck_full = (~no_data) & (~low_cov) & (stats["sat_share"] > C.STUCK_FULL_SHARE)
     keep_ids = set(stats.loc[~no_data & ~low_cov & ~stuck_full, "station_id"])
+    # acoperire între COVERAGE_MIN_EXTRA și COVERAGE_MIN: doar pentru antrenare, niciodată în evaluare
+    extra_ids = set(stats.loc[stats["coverage"] < C.COVERAGE_MIN, "station_id"]) & keep_ids
 
     cells_kept_st = cells[cells["station_id"].isin(keep_ids)]
     few_obs = cells_kept_st["n_obs"] < C.MIN_CELL_OBS
     target = cells_kept_st[~few_obs].reset_index(drop=True)
     target["hour"] = target["hour"].astype(int)
     target["is_weekend"] = target["is_weekend"].astype(int)
+    target["is_extra"] = target["station_id"].isin(extra_ids).astype(int)
 
     stats["kept"] = stats["station_id"].isin(set(target["station_id"]))
+    stats["is_extra"] = stats["station_id"].isin(extra_ids)
     mismatch = stats["n_piles_series"].notna() & (stats["n_piles_series"] != stats["charge_count"])
 
     cells_per_station = target.groupby("station_id").size()
     quality = {
         "coverage_min": C.COVERAGE_MIN,
+        "coverage_min_extra_train_only": C.COVERAGE_MIN_EXTRA,
         "min_cell_obs": C.MIN_CELL_OBS,
         "stations_raw": int(n_all),
         "stations_removed_no_data": int(no_data.sum()),
         "stations_removed_low_coverage": int(low_cov.sum()),
+        "stations_extra_train_only": int((stats["kept"] & stats["is_extra"]).sum()),
         "stuck_full_share": C.STUCK_FULL_SHARE,
         "stations_removed_stuck_full": int(stuck_full.sum()),
         "stations_removed_stuck_full_ids": [int(s) for s in stats.loc[stuck_full, "station_id"]],
         "stations_kept": int(stats["kept"].sum()),
+        "stations_kept_evaluable": int((stats["kept"] & ~stats["is_extra"]).sum()),
         "stations_kept_almost_always_zero": int((stats["kept"] & (stats["zero_share"] > 0.99)).sum()),
         "cells_possible_for_kept_stations": int(len(keep_ids) * 48),
         "cells_present_for_kept_stations": int(len(cells_kept_st)),

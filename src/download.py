@@ -2,6 +2,7 @@
 
 - UrbanEV: verifică dacă fișierele există. Dryad nu permite o descărcare automată fiabilă,
   așa că, dacă lipsesc, scriptul afișează instrucțiuni.
+- OpenStreetMap (Geofabrik, extractul Guangdong, ~175 MB): pentru feature-urile despre tipul locului.
 - WorldPop 2020 (100 m, China, UN-adjusted): citește prin HTTP doar fereastra Shenzhen
   (GDAL /vsicurl/ cu range requests). Dacă nu merge, descarcă tot fișierul (~4,4 GB) și îl decupează.
 """
@@ -85,9 +86,23 @@ def download_worldpop(force: bool = False):
         _write_crop(src, C.WORLDPOP_CROP)
 
 
+def download_osm(force: bool = False):
+    if C.OSM_PBF.exists() and not force:
+        print(f"[OSM] OK ({C.OSM_PBF.relative_to(C.ROOT)} există)")
+        return
+    C.OSM_DIR.mkdir(parents=True, exist_ok=True)
+    tmp = C.OSM_PBF.with_suffix(".part")
+    print(f"[OSM] descarc {C.OSM_URL} ...")
+    with urllib.request.urlopen(C.OSM_URL) as r, open(tmp, "wb") as f:
+        shutil.copyfileobj(r, f, length=16 * 1024 * 1024)
+    tmp.rename(C.OSM_PBF)
+    print(f"[OSM] scris: {C.OSM_PBF.relative_to(C.ROOT)}")
+
+
 def main():
     ok = check_urbanev()
     download_worldpop(force="--force" in sys.argv)
+    download_osm(force="--force" in sys.argv)
     if not ok:
         sys.exit(1)
 

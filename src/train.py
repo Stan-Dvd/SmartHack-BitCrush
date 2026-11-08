@@ -80,8 +80,23 @@ def fit_booster(df, features, params, target_mode, num_boost_round, valid=None):
     return lgb.train(params, dtr, num_boost_round=num_boost_round, **kw)
 
 
+def folds_from_groups(train: pd.DataFrame, groups: pd.Series):
+    """Fold-uri GroupKFold calculate DOAR pe stațiile evaluabile (is_extra == 0).
+
+    Stațiile extra nu intră niciodată în validare; intră în antrenare doar dacă grupul lor nu e în fold-ul
+    de validare. Astfel fold-urile sunt identice cu sau fără stațiile extra (comparații perechi).
+    """
+    extra = (train["is_extra"] == 1).to_numpy() if "is_extra" in train else np.zeros(len(train), bool)
+    reg = np.flatnonzero(~extra)
+    group_fold = {}
+    for k, (_, va) in enumerate(GroupKFold(n_splits=C.N_FOLDS).split(reg, groups=groups.iloc[reg])):
+        group_fold.update({g: k for g in groups.iloc[reg[va]].unique()})
+    fold_of = groups.map(group_fold).to_numpy(dtype=float)  # NaN = grup doar cu stații extra
+    return [(np.flatnonzero(fold_of != k), np.flatnonzero((fold_of == k) & ~extra)) for k in range(C.N_FOLDS)]
+
+
 def cv_folds(train: pd.DataFrame):
-    return list(GroupKFold(n_splits=C.N_FOLDS).split(train, groups=train["zone_id"]))
+    return folds_from_groups(train, train["zone_id"])
 
 
 def run_cv(train, features, params, folds, target_mode="y"):

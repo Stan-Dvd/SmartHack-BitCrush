@@ -27,6 +27,12 @@ WORLDPOP_URL = (
 WORLDPOP_DIR = RAW / "worldpop"
 WORLDPOP_CROP = WORLDPOP_DIR / "shenzhen_ppp_2020_UNadj.tif"
 
+# OpenStreetMap (Geofabrik, ODbL): extractul provinciei Guangdong
+OSM_URL = "https://download.geofabrik.de/asia/china/guangdong-latest.osm.pbf"
+OSM_DIR = RAW / "osm"
+OSM_PBF = OSM_DIR / "guangdong-latest.osm.pbf"
+OSM_LAYERS = OSM_DIR / "shenzhen_layers.parquet"  # obiectele OSM extrase, decupate pe BBOX
+
 TARGET_FILE = PROCESSED / "target.parquet"
 STATION_STATS_FILE = PROCESSED / "station_stats.parquet"
 STATION_FEATURES_FILE = PROCESSED / "station_features.parquet"
@@ -46,7 +52,10 @@ ANALYSIS_FILE = REPORTS / "analysis.json"
 BBOX = dict(lon_min=113.70, lon_max=114.70, lat_min=22.35, lat_max=22.90)
 
 # --- ținta ---
-COVERAGE_MIN = 0.70  # stațiile cu acoperire sub prag sunt eliminate
+COVERAGE_MIN = 0.70  # stațiile cu acoperire sub prag nu intră în evaluare (nici în test, nici în validarea CV)
+# stațiile cu acoperire între COVERAGE_MIN_EXTRA și COVERAGE_MIN („extra”) pot intra DOAR în train
+COVERAGE_MIN_EXTRA = 0.50
+USE_EXTRA_TRAIN = False
 MIN_CELL_OBS = 10  # celulele (stație, oră, is_weekend) cu mai puține intervale sunt eliminate
 STUCK_FULL_SHARE = 0.95  # stații cu toate punctele ocupate în >95% din intervale: serie blocată, eliminată
 
@@ -55,6 +64,7 @@ EARTH_RADIUS_M = 6_371_008.8
 STATION_RADII_M = (500, 1000, 3000)
 COMPETITOR_PILES_RADIUS_M = 1000
 POP_RADIUS_M = 1000
+POP_RADII_M = (500, 1000, 3000)  # pop_1km e în model; 500 m și 3 km sunt candidați
 POI_RADIUS_M = 500
 POI_CATEGORIES = {
     "food and beverage services": "poi_food_500m",
@@ -75,6 +85,22 @@ STATION_FEATURES = ["n_piles", "power_kw"]
 TEMPORAL_FEATURES = ["hour", "is_weekend"]
 
 FEATURES = [*COMPETITION_FEATURES, *CONTEXT_FEATURES, *STATION_FEATURES, *TEMPORAL_FEATURES]
+
+# feature-uri candidate: calculate în train_table, dar intră în model doar dacă sunt adăugate în FEATURES
+# (decizia se ia în CV, cu src.experiments; regula: mai bun în >= 4 din 5 fold-uri)
+CANDIDATE_STATION = ["fast_share"]
+CANDIDATE_MULTI_RADIUS = [
+    "pop_500m", "pop_3km",
+    "poi_food_1km", "poi_business_res_1km", "poi_lifestyle_1km",
+    "competition_weighted",  # Σ puncte · exp(−d / 1 km), până la 5 km
+    "pop_per_pile_1km", "poi_per_pile_1km",  # raport cerere / ofertă de puncte pe 1 km
+]
+CANDIDATE_OSM = [
+    "landuse_residential_500m", "landuse_industrial_500m", "landuse_commercial_500m",
+    "dist_major_road_m", "major_road_km_1km",
+    "n_parking_500m", "dist_parking_m", "dist_rail_station_m", "dist_bus_station_m", "n_buildings_500m",
+]
+CANDIDATE_FEATURES = [*CANDIDATE_STATION, *CANDIDATE_MULTI_RADIUS, *CANDIDATE_OSM]
 TARGET = "y"
 ID_COLS = ["station_id", "zone_id"]
 

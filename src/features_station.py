@@ -1,6 +1,7 @@
 """Feature-uri despre stație: n_piles și power_kw.
 
 - n_piles = charge_count din station_information (egal cu busy + idle în serie).
+- fast_share = fast_count / charge_count (candidat).
 - power_kw = media puterii nominale pe punctele stației (pile_rated_power.csv); punctele cu 0 kW
   sunt tratate ca lipsă. Pentru stațiile fără niciun punct cu putere cunoscută:
   (slow_count * median_AC + fast_count * median_DC) / charge_count, cu medianele din fișierul de puncte.
@@ -24,6 +25,7 @@ def station_features(info: pd.DataFrame, piles: pd.DataFrame | None = None) -> p
     out["power_imputed"] = out["power_kw"].isna().astype(int)
     fallback = (info["slow_count"] * med_ac + info["fast_count"] * med_dc) / info["charge_count"]
     out["power_kw"] = out["power_kw"].fillna(fallback)
+    out["fast_share"] = info["fast_count"] / info["charge_count"]  # ponderea punctelor rapide (DC)
     assert out["power_kw"].notna().all() and np.isfinite(out["power_kw"]).all()
     out.attrs["median_ac_kw"] = med_ac
     out.attrs["median_dc_kw"] = med_dc

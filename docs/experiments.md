@@ -71,3 +71,43 @@ Fișiere: `reports/analysis.json`, `reports/top20_stations.csv` și `reports/fig
 - `power_kw` are acum un efect monoton (ocupare mai mare la putere mai mare) și poate fi folosit ca variabilă de decizie, cu aceeași prudență legată de selection bias.
 - Câștiguri probabile în acuratețe: tipul de stație sau utilizatorul (public, flotă, rezidențial), dacă există o sursă publică; `fast_share` (câștig marginal, 3/5 fold-uri).
 - Pentru clasarea locațiilor, LightGBM e la egalitate cu B1 (Spearman 0,768 față de 0,775 pe test). Avantajul modelului e în **nivelul** cererii (RMSE −13%), nu în ordonarea stațiilor existente, care e dominată de mărimea lor.
+
+## Îmbunătățiri încercate după faza 1 (niciuna adoptată)
+
+**Scop:** reducerea erorilor descrise mai sus (stații de flotă sau depou, subestimarea de noapte, stații „moarte”). Am urmărit trei direcții alese împreună cu echipa:
+1. date de antrenare în plus;
+2. feature-uri pe mai multe raze;
+3. feature-uri OpenStreetMap despre tipul locului.
+
+**Regula de adoptare**, fixată dinainte: un candidat intră în model doar dacă îmbunătățește media CV **și** e mai bun în cel puțin 4 din 5 fold-uri, comparat pe aceleași fold-uri cu modelul final (CV MAE 1,6616). Testul **nu** a fost rulat pentru candidați. Rezultatele sunt în `reports/experiments_candidates.json` și se reproduc cu `python -m src.experiments --candidates`.
+
+| Candidat | CV MAE | Δ față de final | Fold-uri mai bune |
+|---|---|---|---|
+| + stațiile cu acoperire 50–70% (83 de stații, doar în train) | 1,687 | +0,026 | 1/5 |
+| + `fast_share` | 1,658 | −0,003 | 3/5 |
+| + `pop_500m` | 1,665 | +0,004 | 2/5 |
+| + `pop_3km` | 1,660 | −0,001 | 3/5 |
+| + POI pe 1 km (food / business_res / lifestyle, individual) | 1,675–1,693 | +0,013…+0,032 | 1–2/5 |
+| + `competition_weighted` (Σ puncte · e^(−d/1 km)) | 1,665 | +0,003 | 4/5 |
+| + `pop_per_pile_1km` | 1,675 | +0,014 | 3/5 |
+| + `poi_per_pile_1km` | 1,669 | +0,007 | 2/5 |
+| + tot grupul pe mai multe raze (8 feature-uri) | 1,687 | +0,026 | 1/5 |
+| + OSM `landuse_residential/industrial/commercial_500m` (individual) | 1,666–1,684 | +0,004…+0,022 | 2–3/5 |
+| + OSM `dist_major_road_m` | 1,677 | +0,015 | 1/5 |
+| + OSM `major_road_km_1km` | 1,654 | −0,008 | 3/5 |
+| + OSM `n_parking_500m` / `dist_parking_m` | 1,666 / 1,680 | +0,004 / +0,019 | 3/5 / 1/5 |
+| + OSM `dist_rail_station_m` / `dist_bus_station_m` | 1,669 / 1,658 | +0,008 / −0,004 | 2/5 / 3/5 |
+| + OSM `n_buildings_500m` | 1,669 | +0,007 | 2/5 |
+| + tot grupul OSM (10 feature-uri) | 1,674 | +0,013 | 1/5 |
+
+**Diagnostic: există semnal pe care îl ratăm?** Am calculat predicții out-of-fold pentru cele 1.102 stații din train și reziduul de ocupare pe stație (real minus prezis, împărțit la `n_piles`). Apoi am măsurat corelația Spearman a reziduului cu fiecare feature, atât candidat, cât și existent:
+- **toate** corelațiile au |ρ| ≤ 0,06, adică sub pragul de zgomot pentru 1.102 stații (±0,06);
+- la fel pentru reziduul de noapte.
+
+Ce greșește modelul nu se explică prin densitate, rază, tipul terenului din OSM sau mărime. Feature-urile noi aduc doar posibilități de overfitting: cu ~1.100 de exemple independente, fiecare feature în plus costă mai mult decât aduce.
+
+**Unde e informația lipsă.** Singura variabilă găsită care e corelată cu reziduul e **prețul**: tariful mediu pe kWh (`e_price`) are ρ = −0,19, iar prețul total (energie + serviciu) are ρ = −0,22. Stațiile ieftine sunt mai pline decât prezice modelul. Prețul rămâne exclus, conform planului (§6.4: o stație nouă nu are preț, iar efectul e greu de separat de cauzalitatea inversă). Pentru faza agentului, însă, prețul e o **variabilă de decizie** a operatorului, ca `n_piles`, și merită discutat ca input controlat de agent.
+
+**Alte observații:**
+- Acoperirea OSM în China e slabă: doar ~10% din grila Shenzhen are landuse marcat, iar clădirile sunt ~170 de mii, cu mult sub numărul real. În România OSM e mult mai complet, deci aceste feature-uri pot deveni utile acolo. Codul rămâne în `src/features_osm.py`.
+- Stațiile cu acoperire 50–70% strică modelul: medii calculate pe mai puține zile sunt mai zgomotoase. Pragul de 70% e confirmat.

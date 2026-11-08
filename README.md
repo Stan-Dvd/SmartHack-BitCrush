@@ -44,6 +44,12 @@ Detaliile sunt în [docs/experiments.md](docs/experiments.md#analiza-erorilor-se
 - **Saturare:** modelul prezice medii și nu atinge pragul de ocupare de 0,9 la ora de vârf, deci precizia și recall-ul la prag sunt 0. Ca clasare are AUC 0,74 față de ocuparea reală de vârf peste 0,9.
 - **`n_piles`:** cererea prezisă crește cu numărul de puncte, dar **super-liniar**, din cauza selection bias-ului (stațiile mari sunt construite unde cererea e deja mare). Agentul nu trebuie să aleagă `n_piles` doar după acest model.
 
+### Încercări de îmbunătățire
+
+După faza 1 am testat în CV 22 de candidați: stațiile cu acoperire 50–70%, `fast_share`, populația și POI pe alte raze, competiția ponderată cu distanța, rapoarte cerere/ofertă și 10 feature-uri OpenStreetMap despre tipul locului (landuse, drumuri mari, parcări, gări, clădiri). **Niciunul nu a trecut regula de adoptare**: mai bun în medie și în cel puțin 4 din 5 fold-uri.
+
+Un diagnostic out-of-fold arată că eroarea rămasă a modelului nu e corelată cu niciun feature disponibil (|ρ| ≤ 0,06), dar e corelată cu **prețul** stației (ρ = −0,22), exclus intenționat din model. Detalii în [docs/experiments.md](docs/experiments.md#îmbunătățiri-încercate-după-faza-1-niciuna-adoptată).
+
 ## Rulare
 
 Cerințe: Python 3.13 (testat cu 3.13.9), aproximativ 6 GB de date brute și 4,5 GB temporar pentru WorldPop.
@@ -52,7 +58,7 @@ Cerințe: Python 3.13 (testat cu 3.13.9), aproximativ 6 GB de date brute și 4,5
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-python -m src.download        # verifică UrbanEV; descarcă și decupează WorldPop (~4,4 GB, o singură dată)
+python -m src.download        # verifică UrbanEV; descarcă WorldPop (~4,4 GB) și OSM Guangdong (~175 MB), o singură dată
 python -m src.inspect_data    # pasul 0: structura datelor (docs/data_notes.md)
 python -m src.build_dataset   # ținta + feature-urile -> data/processed/train_table.parquet
 python -m src.split           # split pe zone -> data/processed/split.json (NU suprascrie fișierul existent)
@@ -60,6 +66,7 @@ python -m src.train           # CV pe zone + modelul final -> models/lgbm.txt, m
 python -m src.evaluate        # B0, B1, LightGBM pe test -> reports/metrics.json, reports/metrics_table.md
 python -m src.analysis        # erori, SHAP, ICE/PD, saturare -> reports/figures/, reports/analysis.json
 python -m src.experiments     # ablații și verificări de robustețe (doar CV) -> reports/experiments.json
+python -m src.experiments --candidates   # feature-urile candidate (doar CV) -> reports/experiments_candidates.json
 ```
 
 Tot fluxul durează aproximativ 3 minute pe 16 nuclee, fără descărcarea WorldPop.
@@ -127,4 +134,5 @@ reports/                 metrici, analize, figuri
 ## Surse de date și licențe
 
 - **UrbanEV** (CC0 1.0). Li, H., Qu, H., Tan, X. et al. *UrbanEV: An Open Benchmark Dataset for Urban Electric Vehicle Charging Demand Prediction.* Scientific Data 12, 523 (2025). https://doi.org/10.1038/s41597-025-04874-4. Datele brute pe stații: https://doi.org/10.5061/dryad.np5hqc04z. Repository: https://github.com/IntelligentSystemsLab/UrbanEV
+- **OpenStreetMap** (ODbL), © OpenStreetMap contributors, extractul Guangdong de la Geofabrik (https://download.geofabrik.de). Folosit doar pentru feature-urile candidate.
 - **WorldPop** (CC BY 4.0), China 2020, 100 m, ajustat la UN (`chn_ppp_2020_UNadj.tif`). WorldPop (www.worldpop.org - School of Geography and Environmental Science, University of Southampton; Department of Geography and Geosciences, University of Louisville; Departement de Geographie, Universite de Namur) and Center for International Earth Science Information Network (CIESIN), Columbia University (2018). Global High Resolution Population Denominators Project - Funded by The Bill and Melinda Gates Foundation (OPP1134076). https://dx.doi.org/10.5258/SOTON/WP00660
