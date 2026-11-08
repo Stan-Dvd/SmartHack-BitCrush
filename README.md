@@ -1,9 +1,31 @@
-# UrbanEV Backend v3: FastAPI, PostgreSQL/PostGIS, H3 și modelul ML de cerere
+# PPC blue EV AI Agent: predicții pentru stațiile de încărcare din România
 
-Baza de date e construită în jurul modelului LightGBM din [ml/](ml/README.md). Modelul prezice câte puncte de încărcare sunt ocupate în medie la o stație, pentru fiecare oră și tip de zi. Baza îl folosește în două moduri:
+Aplicația ajută **PPC blue** să își planifice rețeaua de stații de încărcare pentru mașini electrice din România. Răspunde la două întrebări:
 
-1. **Utilizarea viitoare a stațiilor existente.** Fiecare stație are un profil prezis de 24 de ore × zi lucrătoare/weekend. Profilul e proiectat pe calendar (ora locală, București) și, dacă stația are observații reale, e calibrat cu ele.
-2. **Performanța unei stații noi** în orice punct din România. Feature-urile modelului (populație, POI, concurență) se calculează live, în PostGIS. Răspunsul include și cât pierd stațiile existente din jur (canibalizare). În plus, o grilă H3 de oportunități acoperă toate zonele populate.
+1. **Cât vor fi folosite stațiile existente?** Pentru fiecare stație din România (PPC blue și concurență) aplicația prezice gradul de utilizare: puncte ocupate pe oră, ore de încărcare și kWh pe zi, ocupare medie și ora de vârf. Predicția se poate proiecta pe calendar (prognoză orară, ora locală) și se calibrează cu observațiile reale ale stației, dacă există.
+2. **Unde merită ca PPC blue să construiască stații noi?** Pentru orice punct din țară, aplicația estimează utilizarea unei stații noi și câți clienți ar lua de la stațiile din jur (canibalizare), atât de la stațiile PPC blue, cât și de la cele ale concurenței. Agentul AI propune seturi de locații pentru un județ sau o localitate, compară județele și estimează, cu ipoteze explicite, partea economică.
+
+Realizat pentru: Smarthack XI 2026, tema PPC „24h to Power PPC”.
+
+### Ce vede utilizatorul (interfața NiceGUI)
+
+- **Harta României** cu toate stațiile de încărcare și, separat, **stațiile PPC blue** (comutatorul „Afișează stațiile PPC”). Click pe o stație afișează gradul de utilizare prezis de model.
+- **Heatmap-ul de oportunități:** utilizarea prezisă a unei stații PPC blue de referință (implicit 2 puncte × 50 kW) în fiecare zonă populată, pe celule H3 de ~0,7 km².
+- **Oportunități de extindere:** cele mai bune locații pentru stații noi, aflate la cel puțin 1 km de orice stație existentă, cu localitatea și coordonatele. Click pe coordonate pornește analiza agentului pentru o stație PPC blue în acel punct.
+- **Meniul „Agent AI”:** sugerează stații noi într-un județ sau o localitate, evaluează orice punct de pe hartă și compară județele. Recomandările pot fi salvate ca locații candidat.
+
+### Stațiile PPC blue din date
+
+Sursa (`data/romania/statii_electrice_ML_cu_localitate.csv`, 1.181 de stații) marchează explicit **13 stații** ca PPC / PPC blue (operatorii `PPC`, `PPC Blue`, `ppc blue`). Pentru cele **273 de stații fără operator**, s-a decis atribuirea lor la PPC (`operator_implicit = true` în baza de date). Aplicația afișează astfel **286 de stații PPC blue**. Stațiile Enel / Enel X (19) apar la concurență. Filtrul se poate schimba din `PPC_OPERATOR_PATTERN` în `main.py` și din `OPERATOR_IMPLICIT` în `etl/import_statii.py`.
+
+### Cum se fac predicțiile
+
+Predicțiile vin din modelul LightGBM din [ml/](ml/README.md), antrenat pe datele reale UrbanEV. Modelul prezice câte puncte de încărcare sunt ocupate în medie la o stație, pentru fiecare oră și tip de zi (lucrătoare / weekend). Se bazează doar pe informații care există și pentru o locație nouă: populația și punctele de interes din jur, concurența (stațiile și punctele de încărcare din apropiere), mărimea și puterea stației. Baza de date PostgreSQL/PostGIS calculează aceste informații live pentru orice punct și stochează predicțiile:
+
+1. **Utilizarea stațiilor existente:** un profil de 24 de ore × zi lucrătoare/weekend pentru fiecare stație, cu prognoză pe calendar.
+2. **Performanța unei stații noi** în orice punct, inclusiv impactul asupra stațiilor vecine, plus o grilă H3 de oportunități care acoperă toate zonele populate.
+
+Modelul a fost antrenat pe Shenzhen și aplicat în România fără reantrenare, deci valorile absolute sunt orientative. Pentru a compara locații între ele, rezultatele sunt mai de încredere. Detalii în secțiunea [Limite](#limite).
 
 ## Modelul de date
 
@@ -105,7 +127,7 @@ curl -X POST localhost:8000/api/candidates/evaluate -H "Content-Type: applicatio
 
 ## Agentul AI
 
-Agentul sugerează locații noi și explică rezultatele. Regula de bază: **LLM-ul conduce, nu calculează**. Modelul de limbaj (OpenAI implicit, Google Gemini opțional) alege tool-urile și scrie raportul, dar **toate cifrele vin din tool-uri deterministe** (SQL + modelul LightGBM). Raportul afișează lista apelurilor („De unde vin cifrele”), iar harta e construită direct din rezultatele tool-urilor, nu din textul LLM-ului.
+Agentul sugerează locații noi pentru stațiile PPC blue și explică rezultatele. Regula de bază: **LLM-ul conduce, nu calculează**. Modelul de limbaj (OpenAI implicit, Google Gemini opțional) alege tool-urile și scrie raportul, dar **toate cifrele vin din tool-uri deterministe** (SQL + modelul LightGBM). Raportul afișează lista apelurilor („De unde vin cifrele”), iar harta e construită direct din rezultatele tool-urilor, nu din textul LLM-ului.
 
 ```
 Meniul „Agent AI” (NiceGUI) → POST /api/agent/run → app/agent.py → app/agent_tools.py (8 tool-uri) → PostGIS + LightGBM
