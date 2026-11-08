@@ -24,6 +24,14 @@ Set de test: 14.576 rânduri, 304 stații, 61 de zone (metricile pe stație folo
 - La **clasarea** stațiilor după cererea zilnică, modelul e la egalitate cu B1 (Spearman 0,759 față de 0,775). Clasarea stațiilor existente e dominată de mărimea lor. Avantajul modelului e în nivelul cererii, adică în cum modulează locația rata de ocupare.
 - **Modelul e constrâns monoton** pe toate feature-urile de locație și de stație (mai multă populație, POI, distanță, putere și puncte ↑; mai multă concurență ↓). Asta reduce memorarea (diferența dintre eroarea pe fold-urile de antrenare și cea pe zone nevăzute) de la 0,56 la 0,15, la aceeași precizie în CV. Pe setul de test, versiunea anterioară, neconstrânsă, avea MAE 1,795 (−7% față de B1). Am păstrat-o pe cea constrânsă pentru că alegerea se face pe CV, nu pe test, iar în CV e la fel de precisă, mai robustă pe blocuri spațiale mari (9,4% față de 8,3%) și ordonează mai bine stațiile după ocupare (0,27 față de 0,22). Detalii în [docs/experiments.md](docs/experiments.md#modelul-fără-overfitting-constrângeri-monotone-pe-toate-feature-urile).
 
+### Overfitting sau underfitting?
+
+![Diagnostic de potrivire](reports/figures/fit_diagnostics.png)
+
+- **A. Fără overfitting.** Pentru modelul final, eroarea pe validare rămâne plată oricât de mult antrenăm (1,68 la runda 205, 1,69 la runda 800), iar distanța față de antrenare e mică (1,46). Modelul anterior memora: eroarea lui pe antrenare cobora până la 0,47, iar pe validare creștea după ~100 de runde.
+- **B. Mai multe stații ar ajuta puțin.** Validarea scade lent (1,77 → 1,66 de la ~200 la ~880 de stații), fără să ajungă la un palier.
+- **C. Underfitting din lipsă de informație.** Un model care ar cunoaște perfect fiecare stație ar avea o eroare de ~0,14, adică doar zgomotul de la o săptămână la alta. Modelul final are 1,68. Aproape toată eroarea rămasă e sistematică (stații moarte, depouri, stații foarte mari), dar nu poate fi explicată din feature-urile disponibile pentru o locație nouă.
+
 ### Ce contează (SHAP, grupat)
 
 | Grup de feature-uri | medie \|Σ SHAP\| |
@@ -73,6 +81,7 @@ python -m src.analysis        # erori, SHAP, ICE/PD, saturare -> reports/figures
 python -m src.experiments     # ablații și verificări de robustețe (doar CV) -> reports/experiments.json
 python -m src.experiments --candidates   # feature-urile candidate (doar CV) -> reports/experiments_candidates.json
 python -m src.size_experiments           # efectul mărimii/puterii: model doar de locație, dubluri, micro-situri
+python -m src.diagnostics                # overfitting/underfitting -> reports/figures/fit_diagnostics.png
 ```
 
 Tot fluxul durează aproximativ 3 minute pe 16 nuclee, fără descărcarea WorldPop.

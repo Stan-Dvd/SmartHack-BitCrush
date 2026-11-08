@@ -1,0 +1,71 @@
+{
+  "loss_curves": {
+    "model final (monoton)": {
+      "chosen_rounds": 205,
+      "train_mae_at_chosen": 1.458582945658202,
+      "cv_mae_at_chosen": 1.6844553871620398,
+      "cv_mae_min": 1.6769932394306273,
+      "round_of_min": 126,
+      "train_mae_at_end": 1.454886764761285,
+      "cv_mae_at_end": 1.686917659997608
+    },
+    "model anterior (monoton doar pe putere)": {
+      "chosen_rounds": 108,
+      "train_mae_at_chosen": 1.0173377421841638,
+      "cv_mae_at_chosen": 1.680028978322842,
+      "cv_mae_min": 1.6787645979190848,
+      "round_of_min": 117,
+      "train_mae_at_end": 0.46795483537922394,
+      "cv_mae_at_end": 1.7392407627110855
+    }
+  },
+  "bars": {
+    "B0": {
+      "train": 3.346097073853161,
+      "cv": 3.346896828686784,
+      "test": 3.268732215264113
+    },
+    "B1": {
+      "train": 1.8510144250067337,
+      "cv": 1.8536727172452996,
+      "test": 1.9302715639379664
+    },
+    "model final (monoton)": {
+      "train": 1.458582945658202,
+      "cv": 1.6844553871620398,
+      "test": 1.841620399056377
+    },
+    "model anterior (monoton doar pe putere)": {
+      "train": 1.0173377421841638,
+      "cv": 1.680028978322842,
+      "test": 1.7947298949050043
+    }
+  },
+  "learning_curve": [
+    {
+      "frac": 0.25,
+      "n_stations": 206.0,
+      "train_mae": 1.5215328032517337,
+      "cv_mae": 1.769601273351336
+    },
+    {
+      "frac": 0.5,
+      "n_stations": 452.8,
+      "train_mae": 1.4484602119794228,
+      "cv_mae": 1.708293643753639
+    },
+    {
+      "frac": 0.75,
+      "n_stations": 658.2,
+      "train_mae": 1.4952613639443808,
+      "cv_mae": 1.676304219225584
+    },
+    {
+      "frac": 1.0,
+      "n_stations": 881.6,
+      "train_mae": 1.5121027579491355,
+      "cv_mae": 1.6585139400330509
+    }
+  ],
+  "noise_floor_mae": 0.14003022630791767
+}
