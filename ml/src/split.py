@@ -12,6 +12,11 @@ import pandas as pd
 from src import config as C
 
 
+def _plain(v):
+    """ID-uri serializabile în JSON: numerele numpy devin int, textul rămâne text (ex. județe, „RO0001”)."""
+    return int(v) if isinstance(v, (int, np.integer)) else v
+
+
 def make_split(table: pd.DataFrame) -> dict:
     if "is_extra" in table:
         table = table[table["is_extra"] == 0]
@@ -26,10 +31,10 @@ def make_split(table: pd.DataFrame) -> dict:
         "seed": C.SEED,
         "test_frac_zones": C.TEST_FRAC,
         "n_zones": int(len(zones)),
-        "test_zones": [int(z) for z in test_zones],
-        "train_zones": [int(z) for z in zones if z not in set(test_zones)],
-        "test_stations": [int(s) for s in sorted(test_st)],
-        "train_stations": [int(s) for s in sorted(train_st)],
+        "test_zones": [_plain(z) for z in test_zones],
+        "train_zones": [_plain(z) for z in zones if z not in set(test_zones)],
+        "test_stations": [_plain(s) for s in sorted(test_st)],
+        "train_stations": [_plain(s) for s in sorted(train_st)],
     }
     assert not set(split["test_zones"]) & set(split["train_zones"])
     assert not set(split["test_stations"]) & set(split["train_stations"])

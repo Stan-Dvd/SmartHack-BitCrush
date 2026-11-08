@@ -9,3 +9,7 @@ __pycache__/
 *:Zone.Identifier
 Smarthack_XI_2026_Tema_PPC.pdf
 .ipynb_checkpoints/
+# rezultate pe setul românesc cu busy sintetic/aleator: nu descriu cererea reală, nu se publică
+data/processed/romania/
+models/romania/
+reports/romania/
