@@ -148,6 +148,15 @@ def _normalize_ppc_station(raw, index):
     return station
 
 
+def _utilization_text(st, fallback="N/A"):
+    """Gradul de utilizare prezis de modelul ML (din API); fallback dacă stația nu are predicție."""
+    occ = _to_float(st.get("ocupare_medie_pred"))
+    if occ is None:
+        return fallback
+    hours = _to_float(st.get("ore_incarcare_zi_pred")) or 0
+    return f"{occ:.0%} ocupare prezisă ({hours:.1f} h încărcare/zi, model ML)"
+
+
 def _ppc_from_national_record(st, index):
     """Mapează o stație din ALL_RO_STATIONS (schema API/CSV) la schema PPC."""
     lat, lng = _to_float(st.get("lat")), _to_float(st.get("lon", st.get("lng")))
@@ -177,7 +186,7 @@ def _ppc_from_national_record(st, index):
         "ai_action": "PPC",
         "ai_reason": f"Stație din rețeaua {st.get('operator', 'PPC')}. "
                      f"Program 24/7: {'Da' if st.get('is_open_24_7') == 1 else 'Nu/Necunoscut'}.",
-        "utilization": "N/A",
+        "utilization": _utilization_text(st),
     }
 
 
@@ -344,8 +353,8 @@ def get_top_ai_insights():
             return [
                 {
                     "priority": f"PRIORITATE {i + 1}",
-                    "type": "H3_DEMAND",
-                    "title": f"Celulă H3 {row.get('title', '')}",
+                    "type": row.get("type", "NEW_SITE"),
+                    "title": row.get("title", ""),
                     "score": row.get("score"),
                     "reason": row.get("reason", ""),
                     "border_color": "border-teal-500/40",
@@ -588,6 +597,71 @@ window.ppcCluster = {
 
 ui.query('body').style('background-color: #0f172a; color: #f8fafc; font-family: sans-serif;')
 
+# STRATURILE AGENTULUI AI pe hartă: contur zonă, recomandări numerotate, stații afectate, punct evaluat.
+# Datele vin din răspunsul /api/agent/run (câmpul `harta`, construit din rezultatele tool-urilor).
+ui.add_head_html('''
+<style>
+    .agent-pin { background: transparent; border: none; }
+    .agent-pin > div {
+        width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+        border-radius: 50%; font-weight: 800; font-family: ui-monospace, monospace; font-size: 13px;
+        box-shadow: 0 0 8px rgba(0,0,0,0.6);
+    }
+    .agent-rec > div { background: #f59e0b; color: #0f172a; border: 2px solid #fef3c7; }
+    .agent-point > div { background: #a855f7; color: #fff; border: 2px solid #f3e8ff; }
+    .agent-report h2 { font-size: 14px; font-weight: 700; color: #5eead4; margin: 10px 0 4px; }
+    .agent-report h3 { font-size: 13px; font-weight: 700; color: #99f6e4; margin: 8px 0 2px; }
+    .agent-report p, .agent-report li { font-size: 12px; line-height: 1.45; }
+    .agent-report ul { list-style: disc; padding-left: 18px; }
+    .agent-report table { border-collapse: collapse; font-size: 11px; margin: 4px 0; width: 100%; }
+    .agent-report th, .agent-report td { border: 1px solid #334155; padding: 2px 4px; text-align: left; }
+    .agent-report th { background: #1e293b; color: #cbd5e1; }
+</style>
+<script>
+window.agentLayer = {
+    layers: {},
+    clear(mapId) {
+        const g = this.layers[mapId];
+        if (!g) return;
+        const el = getElement(mapId);
+        if (el && el.map) el.map.removeLayer(g);
+        delete this.layers[mapId];
+    },
+    pin(label, cls) {
+        return L.divIcon({ className: 'agent-pin ' + cls, iconSize: [30, 30], iconAnchor: [15, 15],
+                           html: '<div>' + label + '</div>' });
+    },
+    show(mapId, h) {
+        this.clear(mapId);
+        const map = getElement(mapId).map;
+        const g = L.featureGroup();
+        if (h.contur) {
+            L.geoJSON(h.contur, { style: { color: '#2dd4bf', weight: 2, dashArray: '6 4', fillOpacity: 0.04 } }).addTo(g);
+        }
+        (h.statii || []).forEach(([lat, lon, cod]) =>
+            L.circleMarker([lat, lon], { radius: 4, color: '#94a3b8', weight: 1, fillOpacity: 0.7 })
+             .bindTooltip('Stație existentă ' + cod).addTo(g));
+        (h.afectate || []).forEach(a =>
+            L.circleMarker([a.lat, a.lon], { radius: 8, color: '#f43f5e', weight: 2, fillOpacity: 0.25 })
+             .bindTooltip(a.cod + ': ' + a.delta + ' ore/zi (canibalizare)').addTo(g));
+        (h.recomandari || []).forEach(r =>
+            L.marker([r.lat, r.lon], { icon: this.pin(r.eticheta, 'agent-rec'), zIndexOffset: 20000 })
+             .bindTooltip('#' + r.eticheta + ' · ' + r.ore + ' ore încărcare/zi · ' + r.id).addTo(g));
+        if (h.punct) {
+            L.marker(h.punct, { icon: this.pin('★', 'agent-point'), zIndexOffset: 21000 })
+             .bindTooltip('Punct evaluat').addTo(g);
+        }
+        g.addTo(map);
+        this.layers[mapId] = g;
+        let b = null;
+        if (h.bbox) b = L.latLngBounds([[h.bbox[1], h.bbox[0]], [h.bbox[3], h.bbox[2]]]);
+        else if (g.getLayers().length) b = g.getBounds();
+        if (b && b.isValid()) map.fitBounds(b, { padding: [40, 40], maxZoom: 13 });
+    },
+};
+</script>
+''')
+
 selected_station = {"data": None}
 
 
@@ -598,6 +672,188 @@ def clear_selection():
     selected_station["data"] = None
     station_details_panel.refresh()
 
+
+# =====================================================================
+# AGENT AI (Gemini + tool-uri deterministe) — pornit din meniul „Agent AI”
+# =====================================================================
+# Agentul rulează în API (POST /api/agent/run); aici doar cerem acțiunea, afișăm raportul
+# și desenăm straturile pe hartă. Toate cifrele din raport vin din tool-uri (vezi „De unde vin cifrele”).
+from nicegui import run as ng_run
+import nicegui_api_client as agent_api
+
+TARA_INTREAGA = 'România (Toată Țara)'
+ECON_FIELDS = {
+    'pret_kwh': 'Preț vânzare (RON/kWh)',
+    'cost_energie_kwh': 'Cost energie (RON/kWh)',
+    'capex_per_punct': 'Investiție / punct (RON)',
+    'factor_putere_medie': 'Factor putere medie (0-1)',
+    'factor_ajustare_cerere': 'Ajustare cerere piață RO (0-1)',
+}
+agent_state = {
+    'status': 'idle',  # idle | loading | done | error
+    'titlu': '', 'mesaj': '', 'rezultat': None, 'pick_point': False,
+    'cfg': {'k': 3, 'n_piles': 2, 'power_kw': 50.0, 'min_dist_m': 1000, 'min_dist_statie_m': 0,
+            **{key: None for key in ECON_FIELDS}},
+}
+
+
+def _agent_params(extra):
+    """Configurația curentă (n_piles, power_kw, ipoteze economice completate) + parametrii acțiunii."""
+    cfg = agent_state['cfg']
+    params = {'n_piles': int(cfg['n_piles']), 'power_kw': float(cfg['power_kw'])}
+    params.update({key: float(cfg[key]) for key in ECON_FIELDS if cfg.get(key) not in (None, '')})
+    params.update(extra)
+    return params
+
+
+def _show_report():
+    agent_report.refresh()
+    report_card.set_visibility(True)
+
+
+async def run_agent_action(actiune, parametri, titlu):
+    if agent_state['status'] == 'loading':
+        ui.notify('Agentul rulează deja o analiză.', type='warning')
+        return
+    agent_state.update(status='loading', titlu=titlu, mesaj='', rezultat=None)
+    _show_report()
+    try:
+        res = await ng_run.io_bound(agent_api.run_agent, actiune, parametri)
+    except agent_api.AgentError as e:
+        agent_state.update(status='error', mesaj=str(e))
+        _show_report()
+        return
+    except Exception as e:  # eroare neașteptată: o arătăm, nu oprim aplicația
+        agent_state.update(status='error', mesaj=f'Eroare neașteptată: {e}')
+        _show_report()
+        return
+    agent_state.update(status='done', rezultat=res)
+    _show_report()
+    await map_widget.initialized()
+    ui.run_javascript(f"window.agentLayer.show({map_widget.id}, {json.dumps(res.get('harta') or {})})")
+
+
+async def save_recommendations():
+    res = agent_state.get('rezultat') or {}
+    items = res.get('recomandari_salvabile') or []
+    if not items:
+        return
+    try:
+        out = await ng_run.io_bound(agent_api.save_candidates, items)
+    except Exception as e:
+        ui.notify(f'Salvarea a eșuat: {e}', type='negative')
+        return
+    ui.notify(f"{out['salvati']} locații salvate ca candidați (status „propus”).", type='positive')
+
+
+def close_report():
+    report_card.set_visibility(False)
+
+
+def clear_agent():
+    agent_state.update(status='idle', rezultat=None, pick_point=False)
+    report_card.set_visibility(False)
+    point_hint.set_visibility(False)
+    ui.run_javascript(f"window.agentLayer.clear({map_widget.id})")
+
+
+def start_point_mode():
+    agent_state['pick_point'] = True
+    point_hint.set_visibility(True)
+    cfg = agent_state['cfg']
+    ui.notify(f"Faceți click pe hartă în punctul de evaluat (stație {cfg['n_piles']} x {cfg['power_kw']:g} kW).",
+              type='info')
+
+
+def cancel_point_mode():
+    agent_state['pick_point'] = False
+    point_hint.set_visibility(False)
+
+
+async def compare_counties():
+    await run_agent_action('compara_judete', _agent_params({}), 'Unde merită investit: comparație între județe')
+
+
+def open_suggest_dialog():
+    cfg = agent_state['cfg']
+    zona_implicita = county_select.value if county_select.value and county_select.value != TARA_INTREAGA else ''
+    field = 'dark outlined dense color=teal'
+    with ui.dialog() as dlg, ui.card().classes('bg-slate-900 text-white w-[440px] gap-2'):
+        ui.label('Sugerează stații noi').classes('text-lg font-bold text-teal-300')
+        ui.label('Agentul alege locațiile cu cel mai mare câștig net: cererea prezisă de model minus '
+                 'cât pierd stațiile vecine (canibalizare).').classes('text-xs text-slate-400')
+        zona = ui.input('Județ sau localitate', value=zona_implicita,
+                        placeholder='ex. Cluj, Cluj-Napoca, județul Iași').props(field).classes('w-full')
+        with ui.row().classes('w-full no-wrap gap-2'):
+            k = ui.number('Câte stații', value=cfg['k'], min=1, max=10, step=1, format='%d').props(field).classes('flex-1')
+            dist = ui.number('Distanță între ele (m)', value=cfg['min_dist_m'], min=0, step=250,
+                             format='%d').props(field).classes('flex-1')
+        with ui.row().classes('w-full no-wrap gap-2'):
+            n = ui.number('Puncte / stație', value=cfg['n_piles'], min=1, max=20, step=1,
+                          format='%d').props(field).classes('flex-1')
+            pw = ui.select({22.0: 'AC 22 kW', 50.0: 'DC 50 kW', 150.0: 'DC 150 kW'}, value=cfg['power_kw'],
+                           label='Putere / punct').props(field).classes('flex-1')
+        dist_st = ui.number('Distanță minimă față de stațiile existente (m)', value=cfg['min_dist_statie_m'],
+                            min=0, step=250, format='%d').props(field).classes('w-full')
+        with ui.expansion('Ipoteze economice (opțional)', icon='payments').classes('w-full text-sm text-slate-300'):
+            ui.label('Câmpurile goale folosesc valorile implicite, ilustrative.').classes('text-[11px] text-slate-400')
+            econ = {key: ui.number(label, value=cfg.get(key)).props(field).classes('w-full')
+                    for key, label in ECON_FIELDS.items()}
+        ui.label('Numărul de puncte nu e optimizat de model (efectul lui nu e cauzal): alegeți-l dvs.') \
+            .classes('text-[11px] text-amber-300/80')
+
+        async def go():
+            zona_txt = (zona.value or '').strip()
+            if not zona_txt:
+                ui.notify('Alegeți un județ sau o localitate.', type='warning')
+                return
+            cfg.update(k=int(k.value or 3), min_dist_m=float(dist.value or 0), n_piles=int(n.value or 2),
+                       power_kw=float(pw.value or 50), min_dist_statie_m=float(dist_st.value or 0),
+                       **{key: inp.value for key, inp in econ.items()})
+            dlg.close()
+            await run_agent_action('sugereaza_statii', _agent_params({
+                'zona': zona_txt, 'k': cfg['k'], 'min_dist_m': cfg['min_dist_m'],
+                'min_dist_statie_m': cfg['min_dist_statie_m']}), f'Stații noi: {zona_txt}')
+
+        with ui.row().classes('w-full justify-end gap-2 mt-2'):
+            ui.button('Anulează', on_click=dlg.close).props('flat color=white')
+            ui.button('Rulează agentul', icon='auto_awesome', on_click=go).props('color=teal')
+    dlg.open()
+
+
+@ui.refreshable
+def agent_report():
+    st = agent_state
+    with ui.row().classes('w-full items-center justify-between no-wrap'):
+        with ui.row().classes('items-center gap-2 no-wrap'):
+            ui.icon('auto_awesome', size='18px').classes('text-teal-300')
+            ui.label(st['titlu'] or 'Agent AI').classes('text-sm font-bold text-teal-200')
+        ui.button(icon='close', on_click=close_report).props('dense flat round color=white size=sm')
+    if st['status'] == 'loading':
+        with ui.row().classes('items-center gap-3 py-4'):
+            ui.spinner('dots', size='lg', color='teal')
+            ui.label('Agentul analizează datele… (de obicei 10–60 s)').classes('text-xs text-slate-300')
+    elif st['status'] == 'error':
+        with ui.row().classes('items-start gap-2 no-wrap'):
+            ui.icon('error_outline', size='20px').classes('text-rose-400')
+            ui.label(st['mesaj']).classes('text-sm text-rose-200 whitespace-pre-wrap')
+    elif st['status'] == 'done' and st['rezultat']:
+        res = st['rezultat']
+        ui.markdown(res['raport'], extras=['tables']).classes('agent-report w-full text-slate-200')
+        if res.get('recomandari_salvabile'):
+            ui.button('Salvează recomandările ca candidați', icon='bookmark_add',
+                      on_click=save_recommendations).props('color=teal dense').classes('w-full')
+        with ui.expansion(f"De unde vin cifrele ({len(res['apeluri'])} apeluri de tool-uri)",
+                          icon='fact_check').classes('w-full text-xs text-slate-300'):
+            for c in res['apeluri']:
+                args = json.dumps(c['argumente'], ensure_ascii=False)
+                ui.label(f"{'✓' if c['ok'] else '✗'} {c['tool']}({args}) · {c.get('durata_s', '')} s") \
+                    .classes('text-[11px] font-mono text-teal-200 break-all')
+                ui.label(c['rezumat']).classes('text-[10px] font-mono text-slate-400 break-all mb-1')
+        ui.label(f"Model: {res['model']} · {res['durata_s']} s · cifrele provin din tool-uri, nu din LLM") \
+            .classes('text-[10px] text-slate-500')
+
+
 # HEADER
 with ui.header().classes('bg-slate-900 border-b border-slate-800 text-white px-6 py-3 flex justify-between items-center'):
     with ui.row().classes('items-center gap-3'):
@@ -606,7 +862,13 @@ with ui.header().classes('bg-slate-900 border-b border-slate-800 text-white px-6
             ui.label('PPC EV AI Agent').classes('text-xl font-bold tracking-wide text-white')
             ui.label('Network Expansion, Upscaling & Location Optimizer').classes('text-xs text-slate-400')
     with ui.row().classes('items-center gap-4'):
-    
+        with ui.button('Agent AI', icon='auto_awesome').props('color=teal unelevated no-caps'):
+            with ui.menu().props('dark').classes('bg-slate-800 text-white'):
+                ui.menu_item('Sugerează stații noi în județ / localitate…', on_click=open_suggest_dialog)
+                ui.menu_item('Evaluează un punct pe hartă (click)', on_click=start_point_mode)
+                ui.menu_item('Compară județele: unde merită investit?', on_click=compare_counties)
+                ui.separator()
+                ui.menu_item('Șterge rezultatele agentului de pe hartă', on_click=clear_agent)
         ui.badge(f'Stații Înregistrate Național: {len(ALL_RO_STATIONS)}', color='slate-700').classes('px-3 py-1 text-xs')
 
     
@@ -645,7 +907,7 @@ with ui.row().classes('w-full h-[calc(100vh-70px)] p-4 gap-4 no-wrap items-stret
                     map_widget.set_center((lat, lng))
                     map_widget.set_zoom(zoom)
 
-            ui.select(
+            county_select = ui.select(
                 options=list(ROMANIAN_COUNTIES.keys()),
                 value='România (Toată Țara)',
                 with_input=True,
@@ -818,6 +1080,14 @@ with ui.row().classes('w-full h-[calc(100vh-70px)] p-4 gap-4 no-wrap items-stret
             additional_resources=LEAFLET_PLUGINS,
         ).classes('w-full h-full min-h-[400px] rounded-xl border border-slate-800 shadow-2xl order-2 relative')
 
+        # Panoul cu raportul agentului AI, suprapus peste hartă (ascuns până la prima rulare)
+        report_card = ui.card().classes(
+            'absolute top-[76px] right-4 z-[1000] w-[460px] max-w-[92%] max-h-[calc(100%-96px)] '
+            'overflow-y-auto bg-slate-900/95 border border-teal-700/50 rounded-xl p-4 gap-2 shadow-2xl')
+        with report_card:
+            agent_report()
+        report_card.set_visibility(False)
+
         # 3. Toolbar
         with ui.card().classes('w-full bg-slate-900 border border-slate-800 p-3 rounded-xl flex-wrap sm:flex-row items-center justify-between gap-2 order-1'):
             with ui.row().classes('items-center gap-3 flex-wrap'):
@@ -825,6 +1095,11 @@ with ui.row().classes('w-full h-[calc(100vh-70px)] p-4 gap-4 no-wrap items-stret
                 with ui.row().classes('gap-1'):
                     ui.button(icon='add', on_click=lambda: map_widget.set_zoom(map_widget.zoom + 1)).props('dense flat color=white')
                     ui.button(icon='remove', on_click=lambda: map_widget.set_zoom(map_widget.zoom - 1)).props('dense flat color=white')
+
+            # Indicator pentru modul „Evaluează un punct pe hartă” (click pe el = anulare)
+            point_hint = ui.button('Click pe hartă pentru evaluare · Anulează', icon='ads_click',
+                                   on_click=cancel_point_mode).props('dense color=purple no-caps')
+            point_hint.set_visibility(False)
 
             with ui.row().classes('items-center gap-2 text-xs font-mono text-slate-400 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 flex-wrap'):
                 ui.label().bind_text_from(map_widget, 'center', backward=lambda c: f'GPS: {c[0]:.2f}, {c[1]:.2f}' if c else 'GPS: -')
@@ -834,7 +1109,16 @@ with ui.row().classes('w-full h-[calc(100vh-70px)] p-4 gap-4 no-wrap items-stret
         # Click pe harta goală => deselectăm stația și ascundem panoul.
         # Click-urile pe pini NU ajung aici (markerele Leaflet nu propagă click-ul către hartă);
         # ele sunt tratate de on_ppc_marker_click / on_csv_marker_click.
-        def on_map_click(e):
+        # În modul „Evaluează un punct”, click-ul pornește agentul pentru acel punct.
+        async def on_map_click(e):
+            if agent_state['pick_point']:
+                ll = (e.args or {}).get('latlng') or {}
+                if 'lat' in ll and 'lng' in ll:
+                    cancel_point_mode()
+                    lat, lon = round(ll['lat'], 6), round(ll['lng'], 6)
+                    await run_agent_action('evalueaza_punct', _agent_params({'lat': lat, 'lon': lon}),
+                                           f'Evaluare punct {lat:.4f}, {lon:.4f}')
+                return
             clear_selection()
 
         def csv_station_details(st):
@@ -851,7 +1135,7 @@ with ui.row().classes('w-full h-[calc(100vh-70px)] p-4 gap-4 no-wrap items-stret
                 "ports": f"Putere Max: {st.get('power_max_kw', 0)} kW (Porturi: {int(st.get('power_count', 0))})",
                 "ai_action": "TERȚ",
                 "ai_reason": f"Localitate: {loc} | Județ: {jud} | Program 24/7: {'Da' if st.get('is_open_24_7') == 1 else 'Nu/Necunoscut'}",
-                "utilization": "Date Terți"
+                "utilization": _utilization_text(st, fallback="Date Terți"),
             }
 
         # Click pe un pin individual din cluster (emis din JS: emitEvent('csv_marker_click', {idx, lat, lon}))
@@ -882,6 +1166,6 @@ with ui.row().classes('w-full h-[calc(100vh-70px)] p-4 gap-4 no-wrap items-stret
 ui.run(
     title='PPC EV Network AI Agent',
     dark=True,
-    port=8080,
+    port=int(__import__('os').getenv('NICEGUI_PORT', '8080')),
     reload=False
 )

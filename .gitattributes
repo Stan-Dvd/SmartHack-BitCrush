@@ -1,0 +1,2 @@
+# Modelul LightGBM e un fișier text, dar LightGBM nu-l citește cu terminații CRLF.
+ml/models/*.txt text eol=lf
