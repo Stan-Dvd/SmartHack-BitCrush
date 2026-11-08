@@ -120,10 +120,9 @@ def train(feature_set="full", monotone=C.USE_MONOTONE, save=True, quick=False):
         t = time.time()
         maes, iters = run_cv(tr, features, params, folds, mode)
         rows.append({"target_mode": mode, **obj, **extra, "cv_mae": np.mean(maes), "cv_mae_std": np.std(maes),
-                     "best_iter_mean": np.mean(iters), "fold_maes": maes, "fold_iters": iters,
-                     "secs": round(time.time() - t, 1)})
+                     "best_iter_mean": np.mean(iters), "fold_maes": maes, "fold_iters": iters})
         print(f"{mode:3s} {json.dumps({**obj, **extra})}: CV MAE {np.mean(maes):.4f} ± {np.std(maes):.4f}, "
-              f"iter {np.mean(iters):.0f}")
+              f"iter {np.mean(iters):.0f} ({time.time() - t:.0f}s)")
     cv = pd.DataFrame(rows).sort_values("cv_mae").reset_index(drop=True)
     best = cv.iloc[0]
     mode = best["target_mode"]

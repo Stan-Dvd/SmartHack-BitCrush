@@ -38,7 +38,8 @@ def main():
     dist = load_station_distance()
     describe("station_information.csv", info)
     describe("pile_rated_power.csv", piles)
-    describe("station_distance.csv (primele 6 coloane)", dist.reset_index(), show_cols=6)
+    dist_df = pd.concat([pd.Series(dist.index, name="ID"), dist.reset_index(drop=True)], axis=1)
+    describe("station_distance.csv (primele 6 coloane)", dist_df, show_cols=6)
     describe("poi.csv", poi)
 
     ids = list_station_ids()

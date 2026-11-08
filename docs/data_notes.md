@@ -18,7 +18,7 @@ Generat cu `python -m src.inspect_data` pe datele UrbanEV brute la nivel de sta�
 
 **2. Puterea și numărul de puncte.** Numărul de puncte e `charge_count` din `station_information.csv` (= `slow_count + fast_count`). Puterea e dată **per punct**, în `pile_rated_power.csv`, și trebuie agregată: `power_kw` = media pe punctele stației. Probleme:
 - 82 de puncte au putere 0 și sunt tratate ca lipsă;
-- **130 de stații nu au niciun punct** în fișier, iar pentru ele puterea se imputează ca `(slow_count·median_AC + fast_count·median_DC) / charge_count` (median AC = 7 kW);
+- **130 de stații nu au niciun punct** în fișier, iar pentru ele puterea se imputează ca `(slow_count·median_AC + fast_count·median_DC) / charge_count` (median AC = 7 kW, median DC = 120 kW);
 - la 7% dintre stațiile prezente, numărul de puncte din fișier diferă de `charge_count`. Folosim `charge_count`, care coincide cu `busy + idle`.
 
 **3. Zona.** Da: `TAZID` (traffic analysis zone), cu 331 de zone unice și fără lipsuri. Se folosește pentru split.
@@ -32,6 +32,8 @@ Generat cu `python -m src.inspect_data` pe datele UrbanEV brute la nivel de sta�
 - **Acoperire** (fracțiunea de intervale cu date): stații cu acoperire ≥30%: 1.543; ≥50%: 1.511; **≥70%: 1.423**; ≥90%: 836. 21 de stații nu au nicio observație. Curățarea autorilor UrbanEV păstrează 1.362 de stații, cu acoperirea minimă 70,07%. Folosim **pragul de 70%**.
 - 74 de stații încep abia pe 2023-02-01, iar 578 de stații se opresc pe 2023-02-21, în jurul orei 08:25 (date trunchiate la sursă).
 - **Saturare:** în medie, 4,7% din intervale au toate punctele ocupate (mediana e 0,3%).
+- **Serii blocate pe plin:** 17 dintre stațiile cu acoperire ≥70% au toate punctele ocupate în peste 95% din intervale (majoritatea în peste 99,9%, iar 4 au `busy` perfect constant). Exemplu: stația 1265 are 45/45 de puncte ocupate 24 de ore din 24, timp de 6 luni. E un artefact de raportare, nu cerere servită. Ele se elimină din țintă (`STUCK_FULL_SHARE = 0,95` în `config.py`), dar rămân în feature-urile de competiție. Lista lor e în `reports/data_quality.json`.
+- **Stații aproape mereu goale:** 21 de stații păstrate au `busy = 0` în peste 99% din intervale. Le păstrăm, pentru că o cerere zero e plauzibilă (locație proastă).
 - **264 de stații** au coordonate identice cu cel puțin o altă stație: situri împărțite de operator, de exemplu în puncte lente și rapide. Pentru ele `dist_nearest_station_m = 0`, iar stația de pe același sit apare în `competitor_piles_1km`. Le păstrăm așa, pentru că sunt infrastructură reală la acel loc.
 - **Distanțe:** `station_distance.csv` e distanță în linie dreaptă. Față de haversine diferă cu 0,14% (mediană) și maximum 161 m pe distanțe de zeci de km, ceea ce înseamnă un elipsoid diferit. Folosim **haversine** pentru toate feature-urile pe raze, pentru că agentul va calcula la fel pentru locațiile noi.
 - Bounding box-ul stațiilor: lon 113,78–114,52, lat 22,47–22,82. Pentru WorldPop decupăm lon 113,70–114,70, lat 22,35–22,90.

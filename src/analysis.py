@@ -184,6 +184,7 @@ def profiles(pred: pd.DataFrame, st: pd.DataFrame) -> dict:
 def shap_analysis(booster, features, X: pd.DataFrame, target_mode: str) -> dict:
     sv = shap.TreeExplainer(booster).shap_values(X[features])
     fig = plt.figure()
+    np.random.seed(C.SEED)  # beeswarm-ul folosește jitter aleator; seed pentru figuri reproductibile
     shap.summary_plot(sv, X[features], show=False, max_display=len(features))
     plt.title("SHAP pe setul de test (ieșirea brută a modelului)", loc="left")
     save(plt.gcf(), "shap_summary.png")
