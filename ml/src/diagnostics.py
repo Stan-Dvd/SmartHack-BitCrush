@@ -68,23 +68,35 @@ def loss_curves(train, feats, mode, params, folds):
     return np.mean(tr_curves, axis=0), np.mean(va_curves, axis=0)
 
 
-def learning_curve(train, feats, mode, params, folds, fracs=(0.25, 0.5, 0.75, 1.0)):
+def learning_curve(train, feats, mode, params, folds, fracs=(0.25, 0.5, 0.75, 1.0), repeats=5):
+    """Pentru fiecare fracțiune: `repeats` eșantioane aleatoare de zone de antrenare (în fiecare fold).
+
+    Raportăm media pe repetări și intervalul min–max, ca să se vadă cât din formă e zgomot de eșantionare.
+    La 100% toate repetările sunt identice (nu mai e nimic de eșantionat).
+    """
     rng = np.random.default_rng(C.SEED)
     out = []
     for frac in fracs:
-        trm, vam, n_st = [], [], []
-        for a, b in folds:
-            tr_all, va = train.iloc[a], train.iloc[b]
-            zones = tr_all["zone_id"].unique()
-            keep = rng.choice(zones, size=max(1, int(round(frac * len(zones)))), replace=False)
-            tr = tr_all[tr_all["zone_id"].isin(keep)]
-            bst = fit_booster(tr, feats, params, mode, C.MAX_BOOST_ROUNDS, valid=va)
-            it = bst.best_iteration
-            trm.append(np.abs(predict_y(bst, tr, feats, mode, it) - tr["y"]).mean())
-            vam.append(np.abs(predict_y(bst, va, feats, mode, it) - va["y"]).mean())
-            n_st.append(tr["station_id"].nunique())
-        out.append({"frac": frac, "n_stations": float(np.mean(n_st)), "train_mae": float(np.mean(trm)),
-                    "cv_mae": float(np.mean(vam))})
+        rep_tr, rep_va, n_st = [], [], []
+        for _ in range(repeats if frac < 1 else 1):
+            trm, vam = [], []
+            for a, b in folds:
+                tr_all, va = train.iloc[a], train.iloc[b]
+                zones = tr_all["zone_id"].unique()
+                keep = rng.choice(zones, size=max(1, int(round(frac * len(zones)))), replace=False)
+                tr = tr_all[tr_all["zone_id"].isin(keep)]
+                bst = fit_booster(tr, feats, params, mode, C.MAX_BOOST_ROUNDS, valid=va)
+                it = bst.best_iteration
+                trm.append(np.abs(predict_y(bst, tr, feats, mode, it) - tr["y"]).mean())
+                vam.append(np.abs(predict_y(bst, va, feats, mode, it) - va["y"]).mean())
+                n_st.append(tr["station_id"].nunique())
+            rep_tr.append(np.mean(trm))
+            rep_va.append(np.mean(vam))
+        out.append({"frac": frac, "n_stations": float(np.mean(n_st)),
+                    "train_mae": float(np.mean(rep_tr)), "train_min": float(np.min(rep_tr)),
+                    "train_max": float(np.max(rep_tr)),
+                    "cv_mae": float(np.mean(rep_va)), "cv_min": float(np.min(rep_va)), "cv_max": float(np.max(rep_va)),
+                    "repeats": len(rep_va)})
     return out
 
 
@@ -141,7 +153,8 @@ def main():
     lc = learning_curve(train, feats, mode, final_params, folds)
     out["learning_curve"] = lc
     for r in lc:
-        print(f"[B] {r['n_stations']:.0f} stații: antrenare {r['train_mae']:.3f}, validare {r['cv_mae']:.3f}")
+        print(f"[B] {r['n_stations']:.0f} stații: antrenare {r['train_mae']:.3f} ({r['train_min']:.3f}–{r['train_max']:.3f}), "
+              f"validare {r['cv_mae']:.3f} ({r['cv_min']:.3f}–{r['cv_max']:.3f})")
 
     # C. antrenare / CV / test + plafon de zgomot
     floor = noise_floor(train["station_id"].unique().tolist())
@@ -180,14 +193,18 @@ def main():
 
     ax = axes[1]
     ns = [r["n_stations"] for r in lc]
+    ax.fill_between(ns, [r["cv_min"] for r in lc], [r["cv_max"] for r in lc], color=ORANGE, alpha=0.18, linewidth=0)
+    ax.fill_between(ns, [r["train_min"] for r in lc], [r["train_max"] for r in lc], color=ORANGE, alpha=0.10,
+                    linewidth=0, label="variație între 5 eșantioane (min–max)")
     ax.plot(ns, [r["cv_mae"] for r in lc], color=ORANGE, marker="o", markersize=7, label="validare (zone nevăzute)")
     ax.plot(ns, [r["train_mae"] for r in lc], color=ORANGE, linestyle="--", marker="o", markersize=6,
             markerfacecolor=SURF, label="antrenare")
     ax.axhline(b1_cv, color=AQUA, linewidth=1.2, label="B1 (validare)")
     ax.axhline(floor, color=VIOLET, linewidth=1.2, linestyle="-.", label=f"plafon de zgomot ≈ {floor:.2f}")
     for n, r in zip(ns, lc):
-        ax.annotate(f"{r['cv_mae']:.2f}", (n, r["cv_mae"]), textcoords="offset points", xytext=(0, 8),
-                    ha="center", fontsize=8, color=INK2)
+        ax.annotate(f"{r['cv_mae']:.2f}", (n, r["cv_max"]), textcoords="offset points", xytext=(0, 7),
+                    ha="center", fontsize=8, color=INK2,
+                    bbox=dict(facecolor=SURF, edgecolor="none", pad=1.0))
     ax.set_xlabel("stații de antrenare")
     ax.set_ylabel("MAE (puncte ocupate)")
     ax.set_title("B. Curba de învățare (modelul final)", loc="left")

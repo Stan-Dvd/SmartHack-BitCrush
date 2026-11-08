@@ -29,7 +29,7 @@ Set de test: 14.576 rânduri, 304 stații, 61 de zone (metricile pe stație folo
 ![Diagnostic de potrivire](reports/figures/fit_diagnostics.png)
 
 - **A. Fără overfitting.** Pentru modelul final, eroarea pe validare rămâne plată oricât de mult antrenăm (1,68 la runda 205, 1,69 la runda 800), iar distanța față de antrenare e mică (1,46). Modelul anterior memora: eroarea lui pe antrenare cobora până la 0,47, iar pe validare creștea după ~100 de runde.
-- **B. Mai multe stații ar ajuta puțin.** Validarea scade lent (1,77 → 1,66 de la ~200 la ~880 de stații), fără să ajungă la un palier.
+- **B. Mai multe stații ar ajuta puțin.** Validarea scade lent (1,74 → 1,66 de la ~220 la ~880 de stații; media pe 5 eșantioane aleatoare, banda arată variația), fără să ajungă la un palier. Eroarea pe antrenare rămâne ~1,50, iar distanța dintre cele două linii scade.
 - **C. Underfitting din lipsă de informație.** Un model care ar cunoaște perfect fiecare stație ar avea o eroare de ~0,14, adică doar zgomotul de la o săptămână la alta. Modelul final are 1,68. Aproape toată eroarea rămasă e sistematică (stații moarte, depouri, stații foarte mari), dar nu poate fi explicată din feature-urile disponibile pentru o locație nouă.
 
 ### Ce contează (SHAP, grupat)
