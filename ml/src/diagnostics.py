@@ -127,10 +127,16 @@ def mae(a, b):
     return float(np.mean(np.abs(np.asarray(a) - np.asarray(b))))
 
 
-def compute_diagnostics(train, test, feats, mode, var: dict, final_name: str, floor: float, folds=None):
-    """Calculele pentru cele trei panouri. `var` = {nume: (parametri LightGBM, runde alese)}."""
-    folds = folds or cv_folds(train)
-    out = {"loss_curves": {}, "bars": {}, "noise_floor_mae": floor}
+def main():
+    table = pd.read_parquet(C.TRAIN_TABLE)
+    train, test = split_table(table)
+    _, meta = load_model()
+    feats, mode = meta["features"], meta["target_mode"]
+    folds = cv_folds(train)
+    var = variants(meta)
+    out = {"loss_curves": {}, "bars": {}}
+
+    # A. loss pe runde
     curves = {}
     for name, (params, n_rounds) in var.items():
         tr_c, va_c = loss_curves(train, feats, mode, params, folds)
@@ -141,11 +147,18 @@ def compute_diagnostics(train, test, feats, mode, var: dict, final_name: str, fl
                                     "train_mae_at_end": float(tr_c[-1]), "cv_mae_at_end": float(va_c[-1])}
         print(f"[A] {name}: la runda {n_rounds}: antrenare {tr_c[n_rounds-1]:.3f}, validare {va_c[n_rounds-1]:.3f}; "
               f"la runda {ROUNDS}: antrenare {tr_c[-1]:.3f}, validare {va_c[-1]:.3f}")
-    lc = learning_curve(train, feats, mode, var[final_name][0], folds)
+
+    # B. curba de învățare (modelul final)
+    final_params = var["model final (monoton)"][0]
+    lc = learning_curve(train, feats, mode, final_params, folds)
     out["learning_curve"] = lc
     for r in lc:
         print(f"[B] {r['n_stations']:.0f} stații: antrenare {r['train_mae']:.3f} ({r['train_min']:.3f}–{r['train_max']:.3f}), "
               f"validare {r['cv_mae']:.3f} ({r['cv_min']:.3f}–{r['cv_max']:.3f})")
+
+    # C. antrenare / CV / test + plafon de zgomot
+    floor = noise_floor(train["station_id"].unique().tolist())
+    out["noise_floor_mae"] = floor
     print(f"[C] plafon de zgomot (stație cunoscută perfect): MAE ≈ {floor:.3f}")
     for name, model in (("B0", B0), ("B1", B1)):
         cv = np.mean([mae(model().fit(train.iloc[a]).predict(train.iloc[b]), train["y"].iloc[b]) for a, b in folds])
@@ -159,28 +172,23 @@ def compute_diagnostics(train, test, feats, mode, var: dict, final_name: str, fl
         out["bars"][name] = {"train": float(tr_c[n_rounds - 1]), "cv": float(va_c[n_rounds - 1]), "test": te}
     for k, v in out["bars"].items():
         print(f"[C] {k:42s} antrenare {v['train']:.3f}  CV {v['cv']:.3f}  test {v['test']:.3f}")
-    return out, curves, lc
 
-
-def plot_diagnostics(out, curves, lc, styles: dict, final_name: str, bar_labels: dict, path, title: str,
-                     ylim_a=None, ylim_b=None):
-    """Figura cu trei panouri. `styles` = {nume variantă: culoare}; `bar_labels` = {nume: etichetă pe axa X}."""
-    floor = out["noise_floor_mae"]
-    b1_cv = out["bars"]["B1"]["cv"]
+    # ---------------------------------------------------------------- figura
     fig, axes = plt.subplots(1, 3, figsize=(17, 5.2))
     ax = axes[0]
+    styles = {"model final (monoton)": ORANGE, "model anterior (monoton doar pe putere)": GRAY}
     x = np.arange(1, ROUNDS + 1)
     for name, (tr_c, va_c, n_rounds) in curves.items():
         c = styles[name]
         ax.plot(x, va_c, color=c, label=f"{name}: validare")
         ax.plot(x, tr_c, color=c, linestyle="--", linewidth=1.5, label=f"{name}: antrenare")
         ax.axvline(n_rounds, color=c, linewidth=0.8, linestyle=":")
-    ax.axhline(b1_cv, color=AQUA, linewidth=1.2, label=f"B1 (validare) = {b1_cv:.3g}")
+    b1_cv = out["bars"]["B1"]["cv"]
+    ax.axhline(b1_cv, color=AQUA, linewidth=1.2, label=f"B1 (validare) = {b1_cv:.2f}")
     ax.set_xlabel("runde de boosting (linia punctată = numărul ales)")
     ax.set_ylabel("MAE (puncte ocupate)")
     ax.set_title("A. Loss în timpul antrenării (CV pe zone)", loc="left")
-    if ylim_a:
-        ax.set_ylim(*ylim_a)
+    ax.set_ylim(0.3, 2.4)
     ax.legend(loc="upper right", fontsize=8)
 
     ax = axes[1]
@@ -192,62 +200,41 @@ def plot_diagnostics(out, curves, lc, styles: dict, final_name: str, bar_labels:
     ax.plot(ns, [r["train_mae"] for r in lc], color=ORANGE, linestyle="--", marker="o", markersize=6,
             markerfacecolor=SURF, label="antrenare")
     ax.axhline(b1_cv, color=AQUA, linewidth=1.2, label="B1 (validare)")
-    ax.axhline(floor, color=VIOLET, linewidth=1.2, linestyle="-.", label=f"plafon de zgomot ≈ {floor:.3g}")
+    ax.axhline(floor, color=VIOLET, linewidth=1.2, linestyle="-.", label=f"plafon de zgomot ≈ {floor:.2f}")
     for n, r in zip(ns, lc):
-        ax.annotate(f"{r['cv_mae']:.3g}", (n, r["cv_max"]), textcoords="offset points", xytext=(0, 7),
+        ax.annotate(f"{r['cv_mae']:.2f}", (n, r["cv_max"]), textcoords="offset points", xytext=(0, 7),
                     ha="center", fontsize=8, color=INK2,
                     bbox=dict(facecolor=SURF, edgecolor="none", pad=1.0))
     ax.set_xlabel("stații de antrenare")
     ax.set_ylabel("MAE (puncte ocupate)")
-    ax.set_title(f"B. Curba de învățare ({final_name})", loc="left")
-    ax.set_ylim(*(ylim_b or (0, 1.2 * max(b1_cv, max(r["cv_max"] for r in lc)))))
+    ax.set_title("B. Curba de învățare (modelul final)", loc="left")
+    ax.set_ylim(0, 2.2)
     ax.legend(loc="lower left", fontsize=8)
 
     ax = axes[2]
-    names = list(bar_labels)
+    names = ["B0", "B1", "model anterior (monoton doar pe putere)", "model final (monoton)"]
+    labels = ["B0\nprofil oraș", "B1\nocupare × puncte", "model anterior", "model final"]
     w = 0.26
     xs = np.arange(len(names))
-    top = max(out["bars"][n][p] for n in names for p in ("train", "cv", "test"))
     for i, (part, col, lab) in enumerate((("train", "#b7d3f6", "antrenare"), ("cv", BLUE, "CV (zone nevăzute)"),
                                            ("test", "#184f95", "test"))):
         vals = [out["bars"][n][part] for n in names]
         bars = ax.bar(xs + (i - 1) * w, vals, width=w - 0.03, color=col, label=lab)
         for bx, v in zip(bars, vals):
-            ax.text(bx.get_x() + bx.get_width() / 2, v + 0.01 * top, f"{v:.3g}", ha="center", fontsize=7.5,
-                    color=INK2)
-    ax.axhline(floor, color=VIOLET, linewidth=1.2, linestyle="-.", label=f"plafon de zgomot ≈ {floor:.3g}")
-    ax.set_xticks(xs, [bar_labels[n] for n in names], fontsize=9)
+            ax.text(bx.get_x() + bx.get_width() / 2, v + 0.03, f"{v:.2f}", ha="center", fontsize=7.5, color=INK2)
+    ax.axhline(floor, color=VIOLET, linewidth=1.2, linestyle="-.", label=f"plafon de zgomot ≈ {floor:.2f}")
+    ax.set_xticks(xs, labels, fontsize=9)
     ax.set_ylabel("MAE (puncte ocupate)")
-    ax.set_ylim(0, top * 1.15)
     ax.set_title("C. Antrenare vs CV vs test", loc="left")
     ax.legend(loc="upper right", fontsize=8)
     ax.grid(axis="x", visible=False)
 
-    fig.suptitle(title, x=0.01, ha="left", fontweight="bold", y=1.02)
+    fig.suptitle("Diagnostic: overfitting (distanța antrenare–validare) și underfitting (distanța până la plafon)",
+                 x=0.01, ha="left", fontweight="bold", y=1.02)
     fig.tight_layout()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, bbox_inches="tight")
+    C.FIGURES.mkdir(parents=True, exist_ok=True)
+    fig.savefig(C.FIGURES / "fit_diagnostics.png", bbox_inches="tight")
     plt.close(fig)
-
-
-def main():
-    table = pd.read_parquet(C.TRAIN_TABLE)
-    train, test = split_table(table)
-    _, meta = load_model()
-    feats, mode = meta["features"], meta["target_mode"]
-    var = variants(meta)
-    floor = noise_floor(train["station_id"].unique().tolist())
-    out, curves, lc = compute_diagnostics(train, test, feats, mode, var, "model final (monoton)", floor)
-    plot_diagnostics(
-        out, curves, lc,
-        styles={"model final (monoton)": ORANGE, "model anterior (monoton doar pe putere)": GRAY},
-        final_name="modelul final",
-        bar_labels={"B0": "B0\nprofil oraș", "B1": "B1\nocupare × puncte",
-                    "model anterior (monoton doar pe putere)": "model anterior", "model final (monoton)": "model final"},
-        path=C.FIGURES / "fit_diagnostics.png",
-        title="Diagnostic: overfitting (distanța antrenare–validare) și underfitting (distanța până la plafon)",
-        ylim_a=(0.3, 2.4), ylim_b=(0, 2.2),
-    )
     (C.REPORTS / "fit_diagnostics.json").write_text(json.dumps(out, indent=2, ensure_ascii=False))
 
 
