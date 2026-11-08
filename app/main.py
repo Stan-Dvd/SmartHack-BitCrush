@@ -24,7 +24,7 @@ from .predictii import (
 from .repository import ensure_h3_cell, ensure_temporal_partition
 from . import agent as agent_mod
 from .agent_tools import TOOLS, ToolError, run_tool, to_jsonable
-from .llm_gemini import LLMUnavailable
+from .llm import LLMUnavailable
 
 
 @asynccontextmanager

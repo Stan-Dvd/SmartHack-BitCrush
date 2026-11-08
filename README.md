@@ -105,10 +105,10 @@ curl -X POST localhost:8000/api/candidates/evaluate -H "Content-Type: applicatio
 
 ## Agentul AI
 
-Agentul sugerează locații noi și explică rezultatele. Regula de bază: **LLM-ul conduce, nu calculează**. Modelul de limbaj (Google Gemini) alege tool-urile și scrie raportul, dar **toate cifrele vin din tool-uri deterministe** (SQL + modelul LightGBM). Raportul afișează lista apelurilor („De unde vin cifrele”), iar harta e construită direct din rezultatele tool-urilor, nu din textul LLM-ului.
+Agentul sugerează locații noi și explică rezultatele. Regula de bază: **LLM-ul conduce, nu calculează**. Modelul de limbaj (OpenAI implicit, Google Gemini opțional) alege tool-urile și scrie raportul, dar **toate cifrele vin din tool-uri deterministe** (SQL + modelul LightGBM). Raportul afișează lista apelurilor („De unde vin cifrele”), iar harta e construită direct din rezultatele tool-urilor, nu din textul LLM-ului.
 
 ```
-Meniul „Agent AI” (NiceGUI) → POST /api/agent/run → app/agent.py (buclă Gemini, max 8 pași)
+Meniul „Agent AI” (NiceGUI) → POST /api/agent/run → app/agent.py (buclă LLM, max 8 pași)
                                                    → app/agent_tools.py (8 tool-uri) → PostGIS + LightGBM
 ```
 
@@ -137,7 +137,11 @@ curl -X POST localhost:8000/api/tools/plan_network -H "Content-Type: application
      -d '{"zona": "Cluj-Napoca", "k": 3, "min_dist_m": 1500}'
 ```
 
-**Configurare.** Ai nevoie de o cheie gratuită de pe https://aistudio.google.com, pusă în `.env` ca `GEMINI_API_KEY=...`. Se acceptă și numele `GOOGLE_API_KEY` sau `GOOGLE_MAPS_API_KEY`. Modelul implicit e `GEMINI_MODEL=gemini-3.6-flash` (stabil și pe nivelul gratuit). Erorile trecătoare (429/500/503/504) se reîncearcă automat de 4 ori, cu pauze din ce în ce mai mari. Dacă modelul rămâne supraîncărcat, analiza se reia cu `GEMINI_MODEL_REZERVA` (implicit `gemini-3.5-flash-lite`). După ce pui cheia, repornește API-ul. Fără cheie, la limită depășită sau la o eroare de rețea, butoanele afișează un mesaj de eroare (`/api/agent/run` întoarce 503). `GET /api/agent/status` arată dacă agentul e configurat. Pe nivelul gratuit, Google poate folosi datele trimise pentru a-și îmbunătăți produsele; aici sunt doar date publice agregate.
+**Configurare.** Furnizorul se alege cu `LLM_PROVIDER` din `.env`:
+- **`openai`** (implicit): cheie de pe https://platform.openai.com/api-keys, pusă ca `OPENAI_API_KEY=...`. Folosește Responses API, cu `OPENAI_MODEL=gpt-6.1-terra` (1 $ / 5 $ per milion de tokeni) și `OPENAI_REASONING_EFFORT=low`. O evaluare face 3–10 apeluri de model, deci costă de ordinul centimelor. SDK-ul reîncearcă automat de 4 ori la 429 și 5xx. La erori trecătoare care persistă, analiza se reia cu `OPENAI_MODEL_REZERVA` (implicit `gpt-6-luna`, 0,10 $ / 0,50 $). API-ul OpenAI nu are nivel gratuit.
+- **`gemini`**: cheie gratuită de pe https://aistudio.google.com, pusă ca `GEMINI_API_KEY` (se acceptă și `GOOGLE_API_KEY` sau `GOOGLE_MAPS_API_KEY`), cu modelul `gemini-3.6-flash` și rezerva `gemini-3.5-flash-lite`. Limitele nivelului gratuit se ating repede: o singură analiză face 4–10 cereri, iar după câteva rulări răspunsul devine 429. Pe nivelul gratuit, Google poate folosi datele trimise.
+
+După ce schimbi cheia sau furnizorul, repornește API-ul. Fără cheie, cu cota epuizată sau la o eroare de rețea, butoanele afișează un mesaj de eroare (`/api/agent/run` întoarce 503). `GET /api/agent/status` arată furnizorul, modelele și dacă agentul e configurat.
 
 **Ce lasă agentul intenționat pe dinafară:** optimizarea lui `n_piles` (efectul învățat nu e cauzal) și predicția de saturare (modelul nu o prinde).
 

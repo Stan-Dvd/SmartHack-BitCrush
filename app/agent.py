@@ -12,7 +12,8 @@ from typing import Any
 from .agent_tools import TOOLS, ToolError, for_llm, run_tool
 from .config import settings
 from .db import get_connection
-from .llm_gemini import LLMUnavailable, run_tool_loop
+from . import llm
+from .llm import LLMUnavailable
 
 SYSTEM = """Ești un analist de infrastructură de încărcare pentru vehicule electrice în România.
 Ajuți la alegerea locațiilor pentru stații noi folosind EXCLUSIV tool-urile disponibile.
@@ -159,13 +160,12 @@ def run(actiune: str, parametri: dict | None = None) -> dict:
 
     # modelul principal, apoi (doar la supraîncărcare) cel de rezervă; analiza se reia de la capăt,
     # ca istoricul conversației să conțină un singur model
-    modele = [settings.gemini_model] + ([settings.gemini_model_rezerva]
-                                         if settings.gemini_model_rezerva and settings.gemini_model_rezerva != settings.gemini_model else [])
+    modele = llm.models()
     raport, model_folosit = None, None
     for i, model in enumerate(modele):
         calls.clear()
         try:
-            raport = run_tool_loop(SYSTEM, prompt, TOOLS, execute, model=model)
+            raport = llm.run_tool_loop(SYSTEM, prompt, TOOLS, execute, model=model)
             model_folosit = model
             break
         except LLMUnavailable as e:
@@ -179,7 +179,7 @@ def run(actiune: str, parametri: dict | None = None) -> dict:
                       "judet": a.get("judet"), "nume": f"Agent AI: {plan['zona']['nume']} #{a['pas']}"}
                      for a in plan["locatii_alese"]]
     return {
-        "actiune": actiune, "parametri": p, "model": model_folosit,
+        "actiune": actiune, "parametri": p, "furnizor": llm.provider(), "model": model_folosit,
         "raport": raport,
         "apeluri": [{k: v for k, v in c.items() if not k.startswith("_")} for c in calls],
         "harta": build_map(calls),
@@ -190,9 +190,8 @@ def run(actiune: str, parametri: dict | None = None) -> dict:
 
 def status() -> dict:
     return {
-        "configurat": bool(settings.gemini_api_key), "furnizor": "Google Gemini (google-genai)",
-        "model": settings.gemini_model, "model_rezerva": settings.gemini_model_rezerva,
-        "max_pasi": settings.agent_max_pasi,
+        "configurat": llm.is_configured(), "furnizor": llm.provider_label(),
+        "modele": llm.models(), "max_pasi": settings.agent_max_pasi,
         "actiuni": list(ACTIUNI), "tools": list(TOOLS),
     }
 

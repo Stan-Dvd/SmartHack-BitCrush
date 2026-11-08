@@ -13,16 +13,7 @@ from google import genai
 from google.genai import errors, types
 
 from .config import settings
-
-
-class LLMUnavailable(RuntimeError):
-    """Modelul de limbaj nu poate fi folosit (cheie lipsă/invalidă, limită depășită, eroare de rețea).
-
-    temporar=True: problemă trecătoare de partea furnizorului (supraîncărcare), merită încercat alt model."""
-
-    def __init__(self, message: str, temporar: bool = False):
-        super().__init__(message)
-        self.temporar = temporar
+from .llm import LLMUnavailable
 
 
 # reîncercări automate ale SDK-ului pentru erori trecătoare (limită/minut, supraîncărcare)

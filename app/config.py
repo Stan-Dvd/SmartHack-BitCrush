@@ -33,7 +33,16 @@ class Settings(BaseSettings):
     # (Călărași: 29,6x; populația e corectată la totalul județului, dar distribuția internă rămâne greșită)
     raport_pop_judet_suspect: float = 2.0
 
-    # --- agent AI (Gemini, free tier: https://aistudio.google.com) ---
+    # --- agent AI: furnizorul modelului de limbaj ("openai" sau "gemini") ---
+    llm_provider: str = "openai"
+
+    # OpenAI (Responses API): https://platform.openai.com/api-keys
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-6.1-terra"  # $1 / $5 per 1M tokeni, function calling
+    openai_model_rezerva: str | None = "gpt-6-luna"  # $0.10 / $0.50; folosit doar la erori trecătoare
+    openai_reasoning_effort: str | None = "low"  # efort de raționament; gol = valoarea implicită a modelului
+
+    # Gemini (free tier: https://aistudio.google.com)
     # cheia se poate numi în .env GEMINI_API_KEY (recomandat), GOOGLE_API_KEY sau GOOGLE_MAPS_API_KEY
     gemini_api_key: str | None = Field(
         default=None, validation_alias=AliasChoices("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_MAPS_API_KEY"))
