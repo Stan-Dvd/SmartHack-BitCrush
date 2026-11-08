@@ -48,6 +48,7 @@ BBOX = dict(lon_min=113.70, lon_max=114.70, lat_min=22.35, lat_max=22.90)
 # --- ținta ---
 COVERAGE_MIN = 0.70  # stațiile cu acoperire sub prag sunt eliminate
 MIN_CELL_OBS = 10  # celulele (stație, oră, is_weekend) cu mai puține intervale sunt eliminate
+STUCK_FULL_SHARE = 0.95  # stații cu toate punctele ocupate în >95% din intervale: serie blocată, eliminată
 
 # --- feature-uri pe raze (metri) ---
 EARTH_RADIUS_M = 6_371_008.8

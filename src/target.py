@@ -28,7 +28,7 @@ def _station_aggregate(station_id: int):
         coverage=float(ok.mean()) if n_total else 0.0,
     )
     if s.empty:
-        stats.update(n_piles_series=np.nan, n_piles_series_nunique=0, sat_share=np.nan,
+        stats.update(n_piles_series=np.nan, n_piles_series_nunique=0, sat_share=np.nan, zero_share=np.nan,
                      first_time=None, last_time=None, busy_mean=np.nan)
         return stats, None
 
@@ -38,6 +38,7 @@ def _station_aggregate(station_id: int):
         n_piles_series=n_piles_series,
         n_piles_series_nunique=int(total.nunique()),
         sat_share=float((s["busy"] >= total).mean()),  # toate punctele ocupate
+        zero_share=float((s["busy"] == 0).mean()),
         first_time=str(s["time"].iloc[0]),
         last_time=str(s["time"].iloc[-1]),
         busy_mean=float(s["busy"].mean()),
@@ -68,7 +69,9 @@ def build_target():
     n_all = len(stats)
     no_data = stats["n_available"] == 0
     low_cov = (~no_data) & (stats["coverage"] < C.COVERAGE_MIN)
-    keep_ids = set(stats.loc[~no_data & ~low_cov, "station_id"])
+    # serii „blocate pe plin”: toate punctele ocupate aproape permanent timp de luni -> artefact de raportare
+    stuck_full = (~no_data) & (~low_cov) & (stats["sat_share"] > C.STUCK_FULL_SHARE)
+    keep_ids = set(stats.loc[~no_data & ~low_cov & ~stuck_full, "station_id"])
 
     cells_kept_st = cells[cells["station_id"].isin(keep_ids)]
     few_obs = cells_kept_st["n_obs"] < C.MIN_CELL_OBS
@@ -86,7 +89,11 @@ def build_target():
         "stations_raw": int(n_all),
         "stations_removed_no_data": int(no_data.sum()),
         "stations_removed_low_coverage": int(low_cov.sum()),
+        "stuck_full_share": C.STUCK_FULL_SHARE,
+        "stations_removed_stuck_full": int(stuck_full.sum()),
+        "stations_removed_stuck_full_ids": [int(s) for s in stats.loc[stuck_full, "station_id"]],
         "stations_kept": int(stats["kept"].sum()),
+        "stations_kept_almost_always_zero": int((stats["kept"] & (stats["zero_share"] > 0.99)).sum()),
         "cells_possible_for_kept_stations": int(len(keep_ids) * 48),
         "cells_present_for_kept_stations": int(len(cells_kept_st)),
         "cells_missing_entirely": int(len(keep_ids) * 48 - len(cells_kept_st)),

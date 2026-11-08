@@ -27,11 +27,11 @@
     "tweedie_variance_power": 1.5,
     "metric": "l1"
   },
-  "num_boost_round": 147,
-  "cv_mae": 1.7821453986767346,
-  "cv_mae_std": 0.12592470972212555,
-  "b1_cv_mae": 1.8759933205685715,
-  "n_train_rows": 53381,
-  "n_train_stations": 1114,
-  "n_train_zones": 254
+  "num_boost_round": 140,
+  "cv_mae": 1.7249310555224675,
+  "cv_mae_std": 0.14830747919245635,
+  "b1_cv_mae": 1.8536727172452996,
+  "n_train_rows": 52805,
+  "n_train_stations": 1102,
+  "n_train_zones": 253
 }

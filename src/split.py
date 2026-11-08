@@ -40,6 +40,8 @@ def load_split() -> dict:
 
 def split_table(table: pd.DataFrame, split: dict | None = None):
     split = split or load_split()
+    unknown = set(table["station_id"]) - set(split["train_stations"]) - set(split["test_stations"])
+    assert not unknown, f"stații care nu apar în split.json: {sorted(unknown)[:10]}"
     is_test = table["station_id"].isin(split["test_stations"])
     train, test = table[~is_test].reset_index(drop=True), table[is_test].reset_index(drop=True)
     assert not set(train["zone_id"]) & set(test["zone_id"])
