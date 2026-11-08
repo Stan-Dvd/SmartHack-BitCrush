@@ -127,4 +127,6 @@ def get_top_ai_insights(limit=3):
         "reason": r["reason"],
         "lat": r["lat"],
         "lon": r["lon"],
+        "localitate": r.get("localitate") or r.get("judet"),
+        "judet": r.get("judet"),
     } for i, r in enumerate(rows)]

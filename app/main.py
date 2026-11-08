@@ -447,10 +447,14 @@ OPPORTUNITY_SQL = """
            ps.ore_incarcare_zi, ps.kwh_zi, ps.ocupare_medie, ps.ocupare_varf, ps.ora_varf,
            ps.percentila_nationala, f.pop_1km, f.poi_food_500m, f.poi_business_res_500m,
            f.poi_lifestyle_500m, f.n_stations_1km, f.n_stations_3km, f.dist_nearest_station_m,
-           f.pop_suspect, f.n_piles, f.power_kw, f.judet
+           f.pop_suspect, f.n_piles, f.power_kw, f.judet,
+           COALESCE(loc.nume, f.judet) AS localitate  -- București nu are localitate (admin_level 8) în OSM
     FROM features_locatie f
     JOIN celule_h3 c ON c.h3_index = f.h3_index
     JOIN predictie_sumar ps ON ps.feature_id = f.feature_id AND ps.model_id = fn_model_activ()
+    LEFT JOIN LATERAL (
+        SELECT l.nume FROM localitate l WHERE ST_Intersects(l.geom, c.center::geometry) LIMIT 1
+    ) loc ON TRUE
 """
 
 
@@ -561,6 +565,7 @@ def get_insights(limit: int = Query(10, ge=1, le=100), min_dist_statie_m: float 
                               min_lat=None, max_lon=None, max_lat=None, exclude_pop_suspect=True)
     return [{
         "h3_index": r["h3_index"], "lat": r["lat"], "lon": r["lon"], "judet": r["judet"],
+        "localitate": r["localitate"],
         "type": "NEW_SITE",
         "title": f"{r['judet'] or 'România'}: celula H3 {r['h3_index']}",
         "score": r["ore_incarcare_zi"],

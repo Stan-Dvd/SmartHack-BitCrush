@@ -357,6 +357,9 @@ def get_top_ai_insights():
                     "title": row.get("title", ""),
                     "score": row.get("score"),
                     "reason": row.get("reason", ""),
+                    "lat": row.get("lat"),
+                    "lon": row.get("lon"),
+                    "localitate": row.get("localitate"),
                     "border_color": "border-teal-500/40",
                     "text_color": "text-teal-400 font-bold",
                     "badge_color": "teal-900",
@@ -770,6 +773,14 @@ def cancel_point_mode():
     point_hint.set_visibility(False)
 
 
+async def analyze_insight_point(lat, lon, localitate=None):
+    """Click pe coordonatele unei oportunități: centrează harta și rulează evaluarea punctului."""
+    map_widget.set_center((lat, lon))
+    map_widget.set_zoom(14)
+    titlu = f"Evaluare {localitate + ' · ' if localitate else ''}{lat:.4f}, {lon:.4f}"
+    await run_agent_action('evalueaza_punct', _agent_params({'lat': round(lat, 6), 'lon': round(lon, 6)}), titlu)
+
+
 async def compare_counties():
     await run_agent_action('compara_judete', _agent_params({}), 'Unde merită investit: comparație între județe')
 
@@ -1012,7 +1023,21 @@ with ui.row().classes('w-full h-[calc(100vh-70px)] p-4 gap-4 no-wrap items-stret
                             with ui.row().classes('items-center justify-between w-full'):
                                 with ui.row().classes('items-center gap-2'):
                                     ui.label(insight['priority']).classes('text-xs font-mono font-bold text-teal-400')
-                                    ui.label(insight['title']).classes('text-xs font-bold text-slate-100')
+                                    # localitatea + coordonatele locației; click pe coordonate = analiza agentului
+                                    # pentru o stație nouă în acel punct (exemplele mock nu au coordonate: titlul)
+                                    if insight.get('lat') is not None and insight.get('lon') is not None:
+                                        lat_i, lon_i = float(insight['lat']), float(insight['lon'])
+                                        with ui.row().classes('items-center gap-1 no-wrap'):
+                                            ui.label(f"{insight.get('localitate') or '-'} ·") \
+                                                .classes('text-xs font-bold text-slate-100')
+                                            ui.label(f"{lat_i:.4f}, {lon_i:.4f}") \
+                                                .classes('text-xs font-bold text-teal-300 underline cursor-pointer '
+                                                         'hover:text-teal-100') \
+                                                .tooltip('Analizează o stație nouă în acest punct (Agent AI)') \
+                                                .on('click', lambda _, la=lat_i, lo=lon_i, loc=insight.get('localitate'):
+                                                    analyze_insight_point(la, lo, loc))
+                                    else:
+                                        ui.label(insight['title']).classes('text-xs font-bold text-slate-100')
                             
 
                         # Separator fin între elemente (fără să apară sub ultimul)
