@@ -1,0 +1,11 @@
+# date brute (mari): populate de src/download.py
+data/raw/
+data/processed/*.parquet
+# mediu
+.venv/
+__pycache__/
+*.pyc
+# fișiere locale
+*:Zone.Identifier
+Smarthack_XI_2026_Tema_PPC.pdf
+.ipynb_checkpoints/

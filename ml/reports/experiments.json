@@ -1,0 +1,627 @@
+{
+  "reference": {
+    "description": "configurația aleasă de src.train (occ, tweedie)",
+    "cv_mae": 1.6615631256079482,
+    "cv_mae_std": 0.08976193002875311,
+    "fold_maes": [
+      1.7615829688856317,
+      1.757331978210846,
+      1.6076607190572911,
+      1.6544128067637849,
+      1.5268271551221853
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.10363727633799402,
+    "iters": 107.8
+  },
+  "toggle_extra_train": {
+    "description": "+ stațiile cu acoperire 50-70% în train (doar antrenare, evaluarea pe aceleași stații)",
+    "cv_mae": 1.6870402348843965,
+    "cv_mae_std": 0.11896292559259317,
+    "fold_maes": [
+      1.8556217585828205,
+      1.7664881723934738,
+      1.6417413344293508,
+      1.6676119818733246,
+      1.5037379271430116
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.08989315147742571,
+    "iters": 87.0,
+    "delta_vs_reference": 0.02547710927644844,
+    "folds_better_than_reference": 1
+  },
+  "add_fast_share": {
+    "description": "+ fast_share",
+    "cv_mae": 1.6583918458587674,
+    "cv_mae_std": 0.10368483707718175,
+    "fold_maes": [
+      1.768277846192016,
+      1.7797082108874736,
+      1.5832050480774529,
+      1.6479734491097162,
+      1.512794675027179
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.10534808522009997,
+    "iters": 84.8,
+    "delta_vs_reference": -0.0031712797491803,
+    "folds_better_than_reference": 3
+  },
+  "add_pop_500m": {
+    "description": "+ pop_500m",
+    "cv_mae": 1.6653710972029576,
+    "cv_mae_std": 0.105140522001491,
+    "fold_maes": [
+      1.782938856961815,
+      1.7698274664349651,
+      1.5754163370422012,
+      1.6821805968285135,
+      1.516492228747292
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.10158299158773432,
+    "iters": 81.6,
+    "delta_vs_reference": 0.0038079715950095406,
+    "folds_better_than_reference": 2
+  },
+  "add_pop_3km": {
+    "description": "+ pop_3km",
+    "cv_mae": 1.6601253932935756,
+    "cv_mae_std": 0.0976218709834933,
+    "fold_maes": [
+      1.7809452461265416,
+      1.7500608752089366,
+      1.5888520235140309,
+      1.6616473682630852,
+      1.5191214533552826
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.10441288915302716,
+    "iters": 128.0,
+    "delta_vs_reference": -0.0014377323143724308,
+    "folds_better_than_reference": 3
+  },
+  "add_poi_food_1km": {
+    "description": "+ poi_food_1km",
+    "cv_mae": 1.6775467760696294,
+    "cv_mae_std": 0.11508624907758386,
+    "fold_maes": [
+      1.830672680066858,
+      1.7660754223862956,
+      1.5849015559904778,
+      1.6903757610766248,
+      1.5157084608278908
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09501458350069847,
+    "iters": 84.0,
+    "delta_vs_reference": 0.015983650461681577,
+    "folds_better_than_reference": 2
+  },
+  "add_poi_business_res_1km": {
+    "description": "+ poi_business_res_1km",
+    "cv_mae": 1.6930678209871708,
+    "cv_mae_std": 0.1211690293349953,
+    "fold_maes": [
+      1.8737713392583764,
+      1.7796213309524065,
+      1.6285156424874558,
+      1.6571095279066723,
+      1.526321264330943
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.0866414522714668,
+    "iters": 64.6,
+    "delta_vs_reference": 0.03150469537922298,
+    "folds_better_than_reference": 1
+  },
+  "add_poi_lifestyle_1km": {
+    "description": "+ poi_lifestyle_1km",
+    "cv_mae": 1.6748292907286273,
+    "cv_mae_std": 0.11086831769357662,
+    "fold_maes": [
+      1.8120488357069242,
+      1.7851531764059771,
+      1.6019973040502906,
+      1.6578007094972496,
+      1.5171464279826956
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09648058411435612,
+    "iters": 86.2,
+    "delta_vs_reference": 0.013266165120679619,
+    "folds_better_than_reference": 2
+  },
+  "add_competition_weighted": {
+    "description": "+ competition_weighted",
+    "cv_mae": 1.664744985266737,
+    "cv_mae_std": 0.1062328330996045,
+    "fold_maes": [
+      1.805759040241118,
+      1.756970738156523,
+      1.600480957988243,
+      1.6496481914168766,
+      1.5108659985309247
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.10192075991673633,
+    "iters": 140.2,
+    "delta_vs_reference": 0.0031818596587892766,
+    "folds_better_than_reference": 4
+  },
+  "add_pop_per_pile_1km": {
+    "description": "+ pop_per_pile_1km",
+    "cv_mae": 1.6751568811046187,
+    "cv_mae_std": 0.11845146617620057,
+    "fold_maes": [
+      1.8519318051836673,
+      1.7523616205313703,
+      1.6030302086719597,
+      1.6590845489994162,
+      1.5093762221366802
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09630385907927108,
+    "iters": 62.8,
+    "delta_vs_reference": 0.013593755496670922,
+    "folds_better_than_reference": 3
+  },
+  "add_poi_per_pile_1km": {
+    "description": "+ poi_per_pile_1km",
+    "cv_mae": 1.6688281136787988,
+    "cv_mae_std": 0.10878418505590547,
+    "fold_maes": [
+      1.7872158099154867,
+      1.7812044210161253,
+      1.6300384847088694,
+      1.6521951888723665,
+      1.4934866638811464
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09971803644021593,
+    "iters": 148.0,
+    "delta_vs_reference": 0.007264988070851031,
+    "folds_better_than_reference": 2
+  },
+  "add_landuse_residential_500m": {
+    "description": "+ landuse_residential_500m",
+    "cv_mae": 1.6659316604750156,
+    "cv_mae_std": 0.11453111005499879,
+    "fold_maes": [
+      1.8223633935508627,
+      1.7422353440733154,
+      1.5732784929656196,
+      1.6878079142639717,
+      1.5039731575213093
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.10128058476756441,
+    "iters": 104.6,
+    "delta_vs_reference": 0.004368534867067941,
+    "folds_better_than_reference": 3
+  },
+  "add_landuse_industrial_500m": {
+    "description": "+ landuse_industrial_500m",
+    "cv_mae": 1.6698080303866636,
+    "cv_mae_std": 0.11055373115558868,
+    "fold_maes": [
+      1.8136614712839234,
+      1.7672082508596858,
+      1.5884502948394388,
+      1.6657797199873714,
+      1.5139404149628979
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09918940120771325,
+    "iters": 142.6,
+    "delta_vs_reference": 0.008244904778715645,
+    "folds_better_than_reference": 2
+  },
+  "add_landuse_commercial_500m": {
+    "description": "+ landuse_commercial_500m",
+    "cv_mae": 1.6834550388816332,
+    "cv_mae_std": 0.11937449591601046,
+    "fold_maes": [
+      1.8126539277514053,
+      1.8236934846596755,
+      1.595530639692342,
+      1.6658012522742036,
+      1.5195958900305395
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09182725557757732,
+    "iters": 69.6,
+    "delta_vs_reference": 0.021891913273685403,
+    "folds_better_than_reference": 2
+  },
+  "add_dist_major_road_m": {
+    "description": "+ dist_major_road_m",
+    "cv_mae": 1.6767072778320524,
+    "cv_mae_std": 0.10878878288909989,
+    "fold_maes": [
+      1.8137302349240052,
+      1.7684946778375488,
+      1.6275726005951936,
+      1.6687806317906695,
+      1.5049582440128464
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09546746724320976,
+    "iters": 83.2,
+    "delta_vs_reference": 0.015144152224104878,
+    "folds_better_than_reference": 1
+  },
+  "add_major_road_km_1km": {
+    "description": "+ major_road_km_1km",
+    "cv_mae": 1.6540833181800518,
+    "cv_mae_std": 0.10370248408227167,
+    "fold_maes": [
+      1.783176768999058,
+      1.7467427903284947,
+      1.574879808682208,
+      1.6605478089068346,
+      1.5050694139836645
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.10767240473919959,
+    "iters": 99.2,
+    "delta_vs_reference": -0.007479807427895846,
+    "folds_better_than_reference": 3
+  },
+  "add_n_parking_500m": {
+    "description": "+ n_parking_500m",
+    "cv_mae": 1.665462797560798,
+    "cv_mae_std": 0.10394722528681523,
+    "fold_maes": [
+      1.8040836025101836,
+      1.7411780765929359,
+      1.5966813679994314,
+      1.675609029778117,
+      1.509761910923321
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.1015335220362934,
+    "iters": 93.0,
+    "delta_vs_reference": 0.0038996719528499478,
+    "folds_better_than_reference": 3
+  },
+  "add_dist_parking_m": {
+    "description": "+ dist_parking_m",
+    "cv_mae": 1.6800761371293071,
+    "cv_mae_std": 0.11442952076510714,
+    "fold_maes": [
+      1.8314461196251786,
+      1.7779636128531606,
+      1.6196136470864815,
+      1.6615016835185277,
+      1.5098556225631885
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09365007020978888,
+    "iters": 99.0,
+    "delta_vs_reference": 0.018513011521359556,
+    "folds_better_than_reference": 1
+  },
+  "add_dist_rail_station_m": {
+    "description": "+ dist_rail_station_m",
+    "cv_mae": 1.6693794165479194,
+    "cv_mae_std": 0.109019400948474,
+    "fold_maes": [
+      1.8162640542828106,
+      1.758672943607256,
+      1.588378206941519,
+      1.666879481589456,
+      1.516702396318556
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09942062532551821,
+    "iters": 118.2,
+    "delta_vs_reference": 0.007816290939971715,
+    "folds_better_than_reference": 2
+  },
+  "add_dist_bus_station_m": {
+    "description": "+ dist_bus_station_m",
+    "cv_mae": 1.6580131571567773,
+    "cv_mae_std": 0.1064108103167931,
+    "fold_maes": [
+      1.7852536143014701,
+      1.7774895488132774,
+      1.580718782709686,
+      1.6272702112924693,
+      1.5193336286669823
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.10555237624648617,
+    "iters": 107.8,
+    "delta_vs_reference": -0.003549968451170793,
+    "folds_better_than_reference": 3
+  },
+  "add_n_buildings_500m": {
+    "description": "+ n_buildings_500m",
+    "cv_mae": 1.668758860629567,
+    "cv_mae_std": 0.09067412900287905,
+    "fold_maes": [
+      1.7672561074697335,
+      1.7507691901854512,
+      1.6347162736442682,
+      1.675516028609437,
+      1.515536703238945
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09975539635202102,
+    "iters": 101.6,
+    "delta_vs_reference": 0.007195735021619187,
+    "folds_better_than_reference": 2
+  },
+  "add_group_multi_radius": {
+    "description": "+ grupul multi_radius: pop_500m, pop_3km, poi_food_1km, poi_business_res_1km, poi_lifestyle_1km, competition_weighted, pop_per_pile_1km, poi_per_pile_1km",
+    "cv_mae": 1.6870833776441985,
+    "cv_mae_std": 0.1274075069972055,
+    "fold_maes": [
+      1.8613580300272419,
+      1.785637974499349,
+      1.61922107075325,
+      1.6725421737473307,
+      1.4966576391938213
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.08986987727189821,
+    "iters": 74.6,
+    "delta_vs_reference": 0.025520252036250746,
+    "folds_better_than_reference": 1
+  },
+  "add_group_osm": {
+    "description": "+ grupul osm: landuse_residential_500m, landuse_industrial_500m, landuse_commercial_500m, dist_major_road_m, major_road_km_1km, n_parking_500m, dist_parking_m, dist_rail_station_m, dist_bus_station_m, n_buildings_500m",
+    "cv_mae": 1.6741448942818056,
+    "cv_mae_std": 0.11309493008381172,
+    "fold_maes": [
+      1.7752791485935848,
+      1.807058488555075,
+      1.641311867404911,
+      1.6593758350662928,
+      1.4876991317891648
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09684979516248493,
+    "iters": 173.4,
+    "delta_vs_reference": 0.012581768673857852,
+    "folds_better_than_reference": 1
+  },
+  "feature_set_base": {
+    "description": "fără populație și POI",
+    "cv_mae": 1.694015395601965,
+    "cv_mae_std": 0.13766201944686418,
+    "fold_maes": [
+      1.8637514266585258,
+      1.8048803877998592,
+      1.661512111954027,
+      1.6744176713411125,
+      1.4655153802563015
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.08613026461359241,
+    "iters": 76.4,
+    "delta_vs_reference": 0.03245226999401738,
+    "folds_better_than_reference": 1
+  },
+  "drop_poi_all": {
+    "description": "fără cele 3 feature-uri POI",
+    "cv_mae": 1.669324832474971,
+    "cv_mae_std": 0.11739298432655815,
+    "fold_maes": [
+      1.8076779005350367,
+      1.7725629611744171,
+      1.6198145404338948,
+      1.6686968404911209,
+      1.477871919740386
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09945007177118281,
+    "iters": 99.2,
+    "delta_vs_reference": 0.00776170686702331,
+    "folds_better_than_reference": 1
+  },
+  "drop_pop_1km": {
+    "description": "fără pop_1km",
+    "cv_mae": 1.6877867701357352,
+    "cv_mae_std": 0.10506187658530731,
+    "fold_maes": [
+      1.819504169607592,
+      1.7776919249551761,
+      1.6401843035061958,
+      1.6793581779562352,
+      1.5221952746534773
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.08949041843593819,
+    "iters": 68.0,
+    "delta_vs_reference": 0.02622364452778747,
+    "folds_better_than_reference": 1
+  },
+  "drop_competition": {
+    "description": "fără feature-urile de competiție",
+    "cv_mae": 1.7227946615320637,
+    "cv_mae_std": 0.11642367457530994,
+    "fold_maes": [
+      1.9013092861790706,
+      1.800705182466205,
+      1.6589898931608156,
+      1.6865364762152903,
+      1.5664324696389362
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.07060472676521379,
+    "iters": 81.8,
+    "delta_vs_reference": 0.061231535924115746,
+    "folds_better_than_reference": 0
+  },
+  "drop_power_kw": {
+    "description": "fără power_kw",
+    "cv_mae": 1.6890641844280576,
+    "cv_mae_std": 0.12479839656977403,
+    "fold_maes": [
+      1.8586542536591342,
+      1.7850980053820842,
+      1.608701354137846,
+      1.686630378185409,
+      1.506236930775815
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.0888012923132746,
+    "iters": 104.0,
+    "delta_vs_reference": 0.02750105882010989,
+    "folds_better_than_reference": 1
+  },
+  "target_y_tweedie": {
+    "description": "ținta y directă, tweedie 1.2 (abordarea inițială din plan)",
+    "cv_mae": 1.7756858498604025,
+    "cv_mae_std": 0.08348955408729569,
+    "fold_maes": [
+      1.9228966521828077,
+      1.8049532891820785,
+      1.7241336706322978,
+      1.7437517980414834,
+      1.682693839263346
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.04207154081697417,
+    "iters": 141.0,
+    "delta_vs_reference": 0.11412272425245487,
+    "folds_better_than_reference": 0
+  },
+  "target_y_l2": {
+    "description": "ținta y directă, L2",
+    "cv_mae": 1.7992200145321209,
+    "cv_mae_std": 0.08577539096596369,
+    "fold_maes": [
+      1.9328881839462828,
+      1.8505733938870463,
+      1.7345728976508323,
+      1.788320158752352,
+      1.6897454384240906
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.029375575422019296,
+    "iters": 118.6,
+    "delta_vs_reference": 0.13765688892417302,
+    "folds_better_than_reference": 0
+  },
+  "occ_l2": {
+    "description": "ocupare, L2",
+    "cv_mae": 1.6875644255024214,
+    "cv_mae_std": 0.10080775522915307,
+    "fold_maes": [
+      1.8118110264499647,
+      1.7870370870573669,
+      1.630887253736744,
+      1.6685226694044564,
+      1.5395640908635737
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.08961036659682187,
+    "iters": 76.8,
+    "delta_vs_reference": 0.026001299894473327,
+    "folds_better_than_reference": 0
+  },
+  "occ_cross_entropy": {
+    "description": "ocupare, cross-entropy",
+    "cv_mae": 1.6757821438199347,
+    "cv_mae_std": 0.10553921329003313,
+    "fold_maes": [
+      1.8107577298123567,
+      1.7695672835408554,
+      1.5927906463084904,
+      1.6776191593132486,
+      1.5281759001247222
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.0959665488790944,
+    "iters": 94.0,
+    "delta_vs_reference": 0.014219018211986834,
+    "folds_better_than_reference": 1
+  },
+  "lower_lr": {
+    "description": "learning_rate 0.02",
+    "cv_mae": 1.6738086521992912,
+    "cv_mae_std": 0.10297910086713712,
+    "fold_maes": [
+      1.8041833877504094,
+      1.775024441445348,
+      1.605957540618009,
+      1.6542775265478273,
+      1.5296003646348626
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09703118752985707,
+    "iters": 270.4,
+    "delta_vs_reference": 0.01224552659134348,
+    "folds_better_than_reference": 2
+  },
+  "lambda_l2_10": {
+    "description": "lambda_l2 = 10",
+    "cv_mae": 1.675130586777565,
+    "cv_mae_std": 0.10233628752935113,
+    "fold_maes": [
+      1.8056980796019209,
+      1.7715259076059926,
+      1.6132228789838954,
+      1.6580610066131658,
+      1.5271450610828499
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09631804406824407,
+    "iters": 108.4,
+    "delta_vs_reference": 0.01356746116961709,
+    "folds_better_than_reference": 0
+  },
+  "no_monotone": {
+    "description": "fără constrângeri monotone",
+    "cv_mae": 1.6751818983540185,
+    "cv_mae_std": 0.10648724061883111,
+    "fold_maes": [
+      1.8223582382257857,
+      1.7617081111435953,
+      1.6159556490563358,
+      1.6543563310659304,
+      1.5215311622784462
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09629036303481453,
+    "iters": 135.4,
+    "delta_vs_reference": 0.013618772746070863,
+    "folds_better_than_reference": 2
+  },
+  "diminishing_returns_n_piles": {
+    "description": "ocupare necrescătoare în n_piles (randament descrescător per punct) + ocupare nedescrescătoare în power_kw",
+    "cv_mae": 1.765314135442663,
+    "cv_mae_std": 0.1117394825519929,
+    "fold_maes": [
+      1.9337606345825231,
+      1.8481029751332188,
+      1.7039901651265996,
+      1.722351486653372,
+      1.618365415717601
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.04766676500150702,
+    "iters": 77.6,
+    "delta_vs_reference": 0.10375100983471511,
+    "folds_better_than_reference": 0
+  },
+  "spatial_blocks_kmeans50": {
+    "description": "CV pe 50 de blocuri spațiale KMeans (în loc de zone TAZ)",
+    "cv_mae": 1.704547361578841,
+    "cv_mae_std": 0.20548601614493328,
+    "fold_maes": [
+      1.9384555883024837,
+      1.955686384394102,
+      1.6262781536791007,
+      1.453838205717048,
+      1.5484784758014698
+    ],
+    "b1_cv_mae": 1.8581116852075923,
+    "gain_vs_b1": 0.08264536779531362,
+    "iters": 123.0
+  }
+}
