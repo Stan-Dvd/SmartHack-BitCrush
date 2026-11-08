@@ -35,6 +35,10 @@ class Settings(BaseSettings):
 
     # --- agent AI: furnizorul modelului de limbaj ("openai" sau "gemini") ---
     llm_provider: str = "openai"
+    # "workflow" (implicit): tool-urile rulează determinist, un singur apel LLM scrie raportul (~2-4k tokeni);
+    # "agentic": LLM-ul alege tool-urile prin function calling (mai multe apeluri, ~10-30k tokeni pe acțiune)
+    agent_mod: str = "workflow"
+    agent_max_output_tokens: int = 4000  # plafon pentru raport (inclusiv tokenii de raționament)
 
     # OpenAI (Responses API): https://platform.openai.com/api-keys
     openai_api_key: str | None = None

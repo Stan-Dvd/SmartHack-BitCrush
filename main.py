@@ -850,7 +850,9 @@ def agent_report():
                 ui.label(f"{'✓' if c['ok'] else '✗'} {c['tool']}({args}) · {c.get('durata_s', '')} s") \
                     .classes('text-[11px] font-mono text-teal-200 break-all')
                 ui.label(c['rezumat']).classes('text-[10px] font-mono text-slate-400 break-all mb-1')
-        ui.label(f"Model: {res['model']} · {res['durata_s']} s · cifrele provin din tool-uri, nu din LLM") \
+        tok = res.get('tokeni') or {}
+        tok_txt = f" · tokeni: {tok.get('intrare')} intrare / {tok.get('iesire')} ieșire" if tok.get('total') else ''
+        ui.label(f"Model: {res['model']} · {res['durata_s']} s{tok_txt} · cifrele provin din tool-uri, nu din LLM") \
             .classes('text-[10px] text-slate-500')
 
 

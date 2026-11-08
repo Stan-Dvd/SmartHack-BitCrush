@@ -55,6 +55,33 @@ def _api_error(e: Exception) -> LLMUnavailable:
     return LLMUnavailable(f"Eroare OpenAI: {type(e).__name__}: {e}")
 
 
+def _extra() -> dict:
+    return {"reasoning": {"effort": settings.openai_reasoning_effort}} if settings.openai_reasoning_effort else {}
+
+
+def generate_text(system: str, prompt: str, model: str | None = None) -> tuple[str, dict]:
+    """Un singur apel fără tool-uri. Întoarce (text, consum de tokeni)."""
+    client = _client()
+    model = model or settings.openai_model
+    try:
+        r = client.responses.create(model=model, instructions=system, input=prompt,
+                                    max_output_tokens=settings.agent_max_output_tokens, **_extra())
+    except openai.OpenAIError as e:
+        raise _api_error(e) from e
+    text = (r.output_text or "").strip()
+    trunchiat = r.status == "incomplete"
+    if not text:
+        raise LLMUnavailable("OpenAI nu a produs raportul (limita de tokeni de ieșire atinsă înainte de text). "
+                             "Măriți AGENT_MAX_OUTPUT_TOKENS sau reduceți OPENAI_REASONING_EFFORT."
+                             if trunchiat else f"OpenAI a întors un răspuns gol (status: {r.status}).")
+    if trunchiat:
+        text += "\n\n*(Raport trunchiat: s-a atins limita de tokeni de ieșire.)*"
+    u = r.usage
+    usage = {"intrare": u.input_tokens, "iesire": u.output_tokens,
+             "rationament": getattr(u.output_tokens_details, "reasoning_tokens", None), "total": u.total_tokens} if u else None
+    return text, usage
+
+
 def run_tool_loop(system: str, prompt: str, tools: dict, execute: Callable[[str, dict], dict],
                   max_steps: int | None = None, model: str | None = None) -> str:
     """Rulează conversația până când modelul răspunde cu text. execute(nume, argumente) -> dict (trimis modelului)."""
@@ -62,9 +89,7 @@ def run_tool_loop(system: str, prompt: str, tools: dict, execute: Callable[[str,
     model = model or settings.openai_model
     max_steps = max_steps or settings.agent_max_pasi
     tool_defs = _tools(tools)
-    extra = {}
-    if settings.openai_reasoning_effort:
-        extra["reasoning"] = {"effort": settings.openai_reasoning_effort}
+    extra = _extra()
     items: list = [{"role": "user", "content": prompt}]
     try:
         for step in range(max_steps + 1):

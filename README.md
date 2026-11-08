@@ -108,9 +108,20 @@ curl -X POST localhost:8000/api/candidates/evaluate -H "Content-Type: applicatio
 Agentul sugerează locații noi și explică rezultatele. Regula de bază: **LLM-ul conduce, nu calculează**. Modelul de limbaj (OpenAI implicit, Google Gemini opțional) alege tool-urile și scrie raportul, dar **toate cifrele vin din tool-uri deterministe** (SQL + modelul LightGBM). Raportul afișează lista apelurilor („De unde vin cifrele”), iar harta e construită direct din rezultatele tool-urilor, nu din textul LLM-ului.
 
 ```
-Meniul „Agent AI” (NiceGUI) → POST /api/agent/run → app/agent.py (buclă LLM, max 8 pași)
-                                                   → app/agent_tools.py (8 tool-uri) → PostGIS + LightGBM
+Meniul „Agent AI” (NiceGUI) → POST /api/agent/run → app/agent.py → app/agent_tools.py (8 tool-uri) → PostGIS + LightGBM
+                                                                  → 1 apel LLM (raportul, din dosarul compact)
 ```
+
+**Consumul de tokeni (modul `workflow`, implicit).** Pașii fiecărei acțiuni sunt ficși, deci tool-urile rulează direct în Python. LLM-ul primește **un singur dosar compact** cu rezultatele și scrie raportul. Măsurat cu `gpt-6.1-terra`:
+
+| Acțiune | Apeluri LLM | Tokeni (intrare + ieșire) | Înainte (`agentic`, estimat) |
+|---|---|---|---|
+| Sugerează 3 stații (Cluj) | 1 | ~2.500 | ~26.000 intrare, 6 apeluri |
+| Sugerează 5 stații (București) | 1 | ~3.200 | peste 30.000 |
+| Evaluează un punct | 1 | ~1.500 | ~12.000 intrare, 4 apeluri |
+| Compară județele | 1 | ~1.800 | ~9.000 intrare, 3 apeluri |
+
+Toate patru, rulate una după alta într-un minut, însumează ~9.000 de tokeni, adică intră în limitele pe minut. Consumul fiecărui raport apare în subsolul panoului. `AGENT_MOD=agentic` reactivează varianta în care LLM-ul alege singur tool-urile prin function calling: mai flexibilă, dar retrimite schemele și istoricul la fiecare rundă. `AGENT_MAX_OUTPUT_TOKENS` (implicit 4000) plafonează raportul.
 
 **În interfață**, butonul **Agent AI** din header deschide un meniu:
 - **Sugerează stații noi**: alegi județul (precompletat din filtru) sau o localitate, numărul de stații, configurația, distanțele minime și, opțional, ipotezele economice. Rezultatul e un raport, plus markeri numerotați pe hartă: locațiile propuse (portocaliu) și stațiile existente care pierd clienți (roșu). Butonul „Salvează recomandările ca candidați” le scrie în `locatie_candidat` cu status `propus`.

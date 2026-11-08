@@ -51,6 +51,29 @@ def _api_error(e: errors.APIError) -> LLMUnavailable:
     return LLMUnavailable(f"Eroare de la Gemini ({code}): {getattr(e, 'message', None) or e}")
 
 
+def generate_text(system: str, prompt: str, model: str | None = None) -> tuple[str, dict]:
+    """Un singur apel fără tool-uri. Întoarce (text, consum de tokeni)."""
+    client = _client()
+    cfg = types.GenerateContentConfig(system_instruction=system, max_output_tokens=settings.agent_max_output_tokens,
+                                      http_options=types.HttpOptions(timeout=120_000, retry_options=RETRY))
+    try:
+        r = client.models.generate_content(model=model or settings.gemini_model, contents=prompt, config=cfg)
+    except errors.APIError as e:
+        raise _api_error(e) from e
+    except Exception as e:
+        raise LLMUnavailable(f"Nu s-a putut comunica cu Gemini: {type(e).__name__}: {e}") from e
+    text = (r.text or "").strip() if r.candidates else ""
+    trunchiat = bool(r.candidates) and r.candidates[0].finish_reason == types.FinishReason.MAX_TOKENS
+    if not text:
+        raise LLMUnavailable("Gemini nu a produs raportul" + (" (limita de tokeni de ieșire)." if trunchiat else "."))
+    if trunchiat:
+        text += "\n\n*(Raport trunchiat: s-a atins limita de tokeni de ieșire.)*"
+    m = r.usage_metadata
+    usage = {"intrare": m.prompt_token_count, "iesire": m.candidates_token_count,
+             "rationament": m.thoughts_token_count, "total": m.total_token_count} if m else None
+    return text, usage
+
+
 def run_tool_loop(system: str, prompt: str, tools: dict, execute: Callable[[str, dict], dict],
                   max_steps: int | None = None, model: str | None = None) -> str:
     """Rulează conversația până când modelul răspunde cu text. execute(nume, argumente) -> dict (trimis modelului).

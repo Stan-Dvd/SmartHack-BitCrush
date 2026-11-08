@@ -42,13 +42,27 @@ def provider_label() -> str:
     return "Google Gemini (google-genai)" if provider() == "gemini" else "OpenAI (Responses API)"
 
 
-def run_tool_loop(system: str, prompt: str, tools: dict, execute: Callable[[str, dict], dict],
-                  model: str | None = None, max_steps: int | None = None) -> str:
+def _impl():
     p = provider()
     if p == "gemini":
-        from .llm_gemini import run_tool_loop as impl
+        from . import llm_gemini as impl
     elif p == "openai":
-        from .llm_openai import run_tool_loop as impl
+        from . import llm_openai as impl
     else:
         raise LLMUnavailable(f"LLM_PROVIDER necunoscut: „{p}”. Valori acceptate: openai, gemini.")
-    return impl(system, prompt, tools, execute, max_steps=max_steps, model=model)
+    return impl
+
+
+def check_configured() -> None:
+    """Ridică LLMUnavailable cu instrucțiuni dacă furnizorul activ nu are cheie."""
+    _impl()._client()
+
+
+def generate_text(system: str, prompt: str, model: str | None = None) -> tuple[str, dict]:
+    """Un singur apel, fără tool-uri: (text, consum de tokeni). Folosit de modul „workflow” al agentului."""
+    return _impl().generate_text(system, prompt, model=model)
+
+
+def run_tool_loop(system: str, prompt: str, tools: dict, execute: Callable[[str, dict], dict],
+                  model: str | None = None, max_steps: int | None = None) -> str:
+    return _impl().run_tool_loop(system, prompt, tools, execute, max_steps=max_steps, model=model)
