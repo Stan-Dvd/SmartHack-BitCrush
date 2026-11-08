@@ -14,23 +14,24 @@ Testul conține 20% din zonele de trafic (TAZ), alese o singură dată cu seed 4
 |---|---|---|---|---|---|
 | B0 (profil oraș) | 3.269 | 5.334 | 0.008 | 74.26 | — |
 | B1 (ocupare × n_piles) | 1.930 | 3.400 | 0.597 | 41.59 | 0.775 |
-| **LightGBM** | **1.795** | **2.949** | **0.697** | **39.05** | 0.768 |
+| **LightGBM** | **1.842** | **3.093** | **0.667** | **40.52** | 0.759 |
 
 Set de test: 14.576 rânduri, 304 stații, 61 de zone (metricile pe stație folosesc 302 stații, cele cu toate cele 48 de celule). Media lui y în test e 3,757 puncte ocupate, adică 87,8 ore de încărcare pe zi per stație.
 
 - **Rând** = stație × oră × tip de zi. **Ore de încărcare pe zi** = (5·Σ zi lucrătoare + 2·Σ weekend) / 7.
 - **B0**: profilul mediu orar al orașului. **B1**: rata medie de ocupare per oră și tip de zi × numărul de puncte al stației. Ambele sunt calculate doar pe train.
-- Față de B1, LightGBM reduce MAE cu 7% și RMSE cu 13% și crește R² de la 0,60 la 0,70. În **CV pe zone** (doar train), câștigul de MAE față de B1 e de 10,4%; pe blocuri spațiale mai mari (KMeans), de 8,3%.
-- La **clasarea** stațiilor după cererea zilnică, modelul e la egalitate cu B1 (Spearman 0,768 față de 0,775). Clasarea stațiilor existente e dominată de mărimea lor. Avantajul modelului e în nivelul cererii, adică în cum modulează locația rata de ocupare.
+- Față de B1, LightGBM reduce MAE cu 4,6% și RMSE cu 9% și crește R² de la 0,60 la 0,67. În **CV pe zone** (doar train), câștigul de MAE față de B1 e de 10,5%; pe blocuri spațiale mai mari (KMeans), de 9,4%.
+- La **clasarea** stațiilor după cererea zilnică, modelul e la egalitate cu B1 (Spearman 0,759 față de 0,775). Clasarea stațiilor existente e dominată de mărimea lor. Avantajul modelului e în nivelul cererii, adică în cum modulează locația rata de ocupare.
+- **Modelul e constrâns monoton** pe toate feature-urile de locație și de stație (mai multă populație, POI, distanță, putere și puncte ↑; mai multă concurență ↓). Asta reduce memorarea (diferența dintre eroarea pe fold-urile de antrenare și cea pe zone nevăzute) de la 0,56 la 0,15, la aceeași precizie în CV. Pe setul de test, versiunea anterioară, neconstrânsă, avea MAE 1,795 (−7% față de B1). Am păstrat-o pe cea constrânsă pentru că alegerea se face pe CV, nu pe test, iar în CV e la fel de precisă, mai robustă pe blocuri spațiale mari (9,4% față de 8,3%) și ordonează mai bine stațiile după ocupare (0,27 față de 0,22). Detalii în [docs/experiments.md](docs/experiments.md#modelul-fără-overfitting-constrângeri-monotone-pe-toate-feature-urile).
 
 ### Ce contează (SHAP, grupat)
 
 | Grup de feature-uri | medie \|Σ SHAP\| |
 |---|---|
-| competiție (`dist_nearest_station_m`, `n_stations_500m/1km/3km`, `competitor_piles_1km`) | 0,129 |
-| stație (`n_piles`, `power_kw`) | 0,105 |
-| populație și POI | 0,085 |
-| timp (`hour`, `is_weekend`) | 0,078 |
+| competiție (`dist_nearest_station_m`, `n_stations_500m/1km/3km`, `competitor_piles_1km`) | 0,186 |
+| populație și POI | 0,125 |
+| stație (`n_piles`, `power_kw`) | 0,118 |
+| timp (`hour`, `is_weekend`) | 0,094 |
 
 Modelul prezice rata de ocupare, iar `n_piles` intră și ca multiplicator, deci efectul structural al mărimii nu apare în SHAP. Mai multe stații pe 3 km înseamnă ocupare mai mică per stație. Populația mare, puterea mare și orele de noapte cresc ocuparea. Figurile sunt în [reports/figures/](reports/figures/).
 
@@ -38,11 +39,11 @@ Modelul prezice rata de ocupare, iar `n_piles` intră și ca multiplicator, deci
 
 Detaliile sunt în [docs/experiments.md](docs/experiments.md#analiza-erorilor-set-de-test-modelul-final).
 
-- **Stații mari, lente, periferice, cu încărcare de noapte** (depouri de flotă sau parcări rezidențiale): sunt subestimate, cu ocupare reală de 0,44 față de 0,28 prezisă. Ele produc 28% din eroarea totală prin doar 20 de stații. Tipul de utilizator nu se vede în niciun feature.
-- **Noaptea** modelul subestimează sistematic (bias de −0,3 până la −0,6 puncte).
+- **Stații mari, lente, periferice, cu încărcare de noapte** (depouri de flotă sau parcări rezidențiale): sunt subestimate, cu ocupare reală de 0,43 față de 0,29 prezisă. Ele produc 29% din eroarea totală prin doar 20 de stații. Tipul de utilizator nu se vede în niciun feature.
+- **Noaptea** modelul subestimează sistematic (bias de aproximativ −0,3 puncte).
 - **Stații „moarte”** (cerere aproape zero): sunt supraestimate.
-- **Saturare:** modelul prezice medii și nu atinge pragul de ocupare de 0,9 la ora de vârf, deci precizia și recall-ul la prag sunt 0. Ca clasare are AUC 0,74 față de ocuparea reală de vârf peste 0,9.
-- **`n_piles`:** cererea prezisă crește cu numărul de puncte, dar **super-liniar**, din cauza selection bias-ului (stațiile mari sunt construite unde cererea e deja mare). Agentul nu trebuie să aleagă `n_piles` doar după acest model.
+- **Saturare:** modelul prezice medii și nu atinge pragul de ocupare de 0,9 la ora de vârf, deci precizia și recall-ul la prag sunt 0. Ca clasare are AUC 0,67 față de ocuparea reală de vârf peste 0,9.
+- **`n_piles`:** cererea prezisă crește monoton cu numărul de puncte, dar **super-liniar** (ocuparea prezisă per punct urcă de la 0,21 la 0,38), din cauza selection bias-ului: stațiile mari sunt construite unde cererea e deja mare. Agentul nu trebuie să aleagă `n_piles` doar după acest model.
 
 ### Încercări de îmbunătățire
 
@@ -91,7 +92,7 @@ Tot fluxul durează aproximativ 3 minute pe 16 nuclee, fără descărcarea World
   - 238 cu acoperire sub 70%;
   - 17 cu serii blocate pe plin (toate punctele ocupate în peste 95% din timp, un artefact de raportare).
 - **Celule eliminate:** 38 de celule cu mai puțin de 10 observații. Rămân 1.406 stații și 67.381 de rânduri ([reports/data_quality.json](reports/data_quality.json)).
-- **Modelul:** LightGBM (tweedie 1,2, 31 de frunze, `min_child_samples = 1000`, 108 runde). Prezice **rata de ocupare** y/n_piles, cu pondere n_piles, iar predicția se înmulțește cu n_piles. Ocuparea e constrânsă să nu scadă când crește `power_kw`. Alegerea s-a făcut prin CV GroupKFold(5) pe zone, doar în train.
+- **Modelul:** LightGBM (tweedie 1,2, 31 de frunze, `min_child_samples = 1000`, 205 runde). Prezice **rata de ocupare** y/n_piles, cu pondere n_piles, iar predicția se înmulțește cu n_piles. Constrângeri monotone pe toate feature-urile, cu excepția orei și a tipului de zi (lista în `config.MONOTONE`). Alegerea s-a făcut prin CV GroupKFold(5) pe zone, doar în train.
 
 | Feature | Definiție |
 |---|---|

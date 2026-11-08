@@ -149,3 +149,47 @@ La o ocupare medie de ~0,22, +0,02 înseamnă aproximativ +9% relativ.
 - Interpretare: efectul lui `n_piles` și `power_kw` din model vine din **unde** sunt construite stațiile mari și rapide, nu din mărimea sau puterea în sine. Asta confirmă ipoteza de selection bias. Pentru `n_piles`, modelul reproduce corect ambele niveluri: zero în sit, pozitiv între situri. Pentru `power_kw`, modelul aplică și în interiorul sitului efectul de +0,033 văzut între situri, efect care în date nu apare.
 - **Limită:** intervalele sunt largi și conțin și valorile dintre situri, deci datele nu exclud un efect cauzal mic. Concluzia sigură e că nu există *dovezi* că mărimea sau puterea cresc rata de ocupare la locație fixă.
 - **Consecința pentru agent:** la o locație dată, rata de ocupare trebuie tratată ca proprietate a locului. O variantă e ca agentul să o ia din modelul „doar locație” sau din modelul complet evaluat la mărimea și puterea tipice din zonă, nu la valorile alese de agent. Cererea servită crește atunci aproximativ proporțional cu numărul de puncte, până la limita cererii locului, pe care datele nu o arată. Peste ea trebuie pusă o limită explicită sau o logică de saturare.
+
+## Modelul fără overfitting: constrângeri monotone pe toate feature-urile
+
+**Problema.** Modelul de mai sus memora mult. Diferența dintre MAE pe fold-urile de antrenare și MAE pe zonele nevăzute era 0,56 (1,10 față de 1,66). Combinațiile de valori ale feature-urilor de locație sunt aproape unice pentru fiecare stație, așa că modelul învăța „amprente” în loc de reguli. Diagnosticele au arătat de ce precizia nu poate crește prea mult: curba de învățare încă scade (1,81 → 1,75 → 1,72 → 1,68 pentru 25% → 100% din stații), iar ocuparea e stabilă în timp (corelație 0,994 între săptămânile pare și cele impare). Limita e informația disponibilă, nu modelul.
+
+**Variante încercate pentru reducerea memorării** (CV pe zone, aceleași fold-uri):
+
+| Variantă | CV MAE | Memorare (CV − antrenare) |
+|---|---|---|
+| Modelul anterior (monoton doar pe `power_kw`) | 1,662 | 0,56 |
+| Model pe două niveluri (ocupare zilnică pe stație + profil orar mediu) | 1,677 | 0,43 |
+| Model pe două niveluri, cu profil orar modelat după locație | 1,652 | 0,45 |
+| Monoton pe feature-urile de locație, cu direcții „din date” | 1,656 | 0,19 |
+| Monoton pe feature-urile de locație, cu direcții „din bun-simț” | 1,659 | 0,25 |
+| **+ `n_piles` nedescrescător (modelul final)** | **1,659** | **0,15** |
+
+Am ales direcțiile „din bun-simț”, nu pe cele „din date”, pentru că acestea din urmă dau un efect negativ al populației, greu de explicat și de transferat în România:
+- **+** pentru populație, cele trei categorii de POI, distanța până la cea mai apropiată stație, putere și `n_piles`;
+- **−** pentru numărul de stații pe 500 m / 1 km / 3 km și pentru punctele concurenților pe 1 km.
+
+Constrângerea pe `n_piles` a fost necesară după constrângerea celorlalte feature-uri. Fără ea, cererea prezisă scădea, de exemplu, de la 15 la 16 puncte (0% din curbele ICE monotone): modelul memora prin valori exacte ale lui `n_piles`. Constrângerea nu forțează o creștere, doar elimină scăderile. Decizia s-a luat pe ICE calculat pe train.
+
+Modelul pe două niveluri nu a fost adoptat: reduce puțin memorarea și cere o restructurare mare a codului. Ideea de a modela profilul orar după locație rămâne utilă pentru faza agentului.
+
+**Rezultate (modelul final: ocupare, tweedie 1,2, 31 de frunze, `min_child_samples` 1000, 205 runde):**
+
+| | Modelul anterior | Modelul final, monoton |
+|---|---|---|
+| CV MAE pe zone | 1,662 (+10,4% vs B1) | 1,659 (+10,5% vs B1) |
+| CV pe blocuri spațiale KMeans | +8,3% vs B1 | **+9,4% vs B1** |
+| Memorare | 0,56 | **0,15** |
+| Spearman ocupare pe stație (out-of-fold) | 0,22 | **0,27** |
+| **Test: MAE / RMSE / R²** | **1,795 / 2,949 / 0,697** | 1,842 / 3,093 / 0,667 |
+| Test: câștig MAE față de B1 | 7,0% | 4,6% |
+| Test: Spearman cererea zilnică | 0,768 | 0,759 |
+
+**Pe test, modelul final e mai slab cu ~2,6% MAE.** L-am păstrat totuși, pentru că regula din tot proiectul e că alegerile se fac pe CV, nu pe test. În CV, modelul final e la fel de precis, e mai robust pe zone mari, ordonează mai bine stațiile și memorează de aproape 4 ori mai puțin. Testul are doar 61 de zone, iar abaterea standard a MAE între fold-urile de CV e ~0,10, deci o diferență de 0,047 pe o singură împărțire e în zona zgomotului.
+
+**Igiena testului.** Pentru acest pas, testul a fost evaluat de două ori: o dată după constrângerile de locație, apoi după adăugarea constrângerii pe `n_piles`. A doua schimbare a fost decisă pe baza ICE și a CV-ului pe train, nu a scorului de test, care a ieșit chiar puțin mai slab.
+
+**Efecte secundare de notat:**
+- Saturarea ca clasare e mai slabă: AUC 0,67 față de 0,74 la ocuparea reală de vârf peste 0,9. Predicțiile sunt mai „netezite”.
+- În micro-situri, modelul atribuie acum mărimii un mic efect și în interiorul aceluiași sit (+0,011 la dublarea numărului de puncte, față de 0,001 real). Recomandarea pentru agent rămâne aceeași: rata de ocupare se evaluează la o mărime și o putere standard, nu la valorile alese de agent.
+- Ablațiile față de modelul final: fără competiție, +0,063 (0/5 fold-uri mai bune); fără populație și POI, +0,014 (1/5); fără constrângeri, +0,017 (2/5).

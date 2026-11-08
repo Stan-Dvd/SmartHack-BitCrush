@@ -134,11 +134,20 @@ MAX_BOOST_ROUNDS = 5000
 EARLY_STOPPING_ROUNDS = 100
 
 # constrângeri monotone pe ieșirea modelului (rata de ocupare, în modul "occ"); dezactivabile cu --no-monotone.
-# power_kw: ocuparea nu scade când crește puterea (fără constrângere, PD avea o mică scădere la 6-7 kW).
-# n_piles rămâne neconstrâns: cererea prezisă e deja crescătoare în n_piles pe 100% din curbele ICE, iar
-# constrângerea „ocupare necrescătoare în n_piles” (randament descrescător) costă ~6% MAE (docs/experiments.md).
+# Direcțiile vin din bun-simț (nu din date), ca să fie explicabile și transferabile în România:
+#   + populația, POI-urile, distanța până la cea mai apropiată stație, puterea
+#   − numărul de stații concurente pe 500 m / 1 km / 3 km și punctele lor pe 1 km
+#   + n_piles: ocuparea nu scade când crește numărul de puncte. Fără ea, după constrângerea celorlalte
+#     feature-uri, modelul memora prin valori exacte de n_piles (cererea prezisă scădea de la 15 la 16 puncte).
+#     Nu forțează o creștere: doar elimină scăderile (tendința crescătoare e deja învățată din date).
+# Efect (CV pe zone): memorarea (MAE pe fold-urile de antrenare vs validare) scade de la ~0,56 la ~0,15,
+# la aceeași precizie pe zone nevăzute. hour și is_weekend rămân neconstrânse.
 USE_MONOTONE = True
-MONOTONE = {"power_kw": 1}
+MONOTONE = {
+    "pop_1km": 1, "poi_food_500m": 1, "poi_business_res_500m": 1, "poi_lifestyle_500m": 1,
+    "dist_nearest_station_m": 1, "power_kw": 1, "n_piles": 1,
+    "n_stations_500m": -1, "n_stations_1km": -1, "n_stations_3km": -1, "competitor_piles_1km": -1,
+}
 
 # --- saturare ---
 SAT_OCC = 0.9  # ocupare prezisă la ora de vârf peste prag => stație saturată (prezis)

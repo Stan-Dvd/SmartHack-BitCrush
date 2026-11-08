@@ -99,15 +99,19 @@ def cv_folds(train: pd.DataFrame):
     return folds_from_groups(train, train["zone_id"])
 
 
-def run_cv(train, features, params, folds, target_mode="y"):
-    maes, iters = [], []
+def run_cv(train, features, params, folds, target_mode="y", return_train_mae=False):
+    """MAE pe fold-urile de validare; opțional și pe cele de antrenare (diferența = cât memorează modelul)."""
+    maes, iters, train_maes = [], [], []
     for tr_idx, va_idx in folds:
         tr, va = train.iloc[tr_idx], train.iloc[va_idx]
         booster = fit_booster(tr, features, params, target_mode, C.MAX_BOOST_ROUNDS, valid=va)
         pred = predict_y(booster, va, features, target_mode, num_iteration=booster.best_iteration)
         maes.append(float(np.mean(np.abs(pred - va[C.TARGET]))))
         iters.append(int(booster.best_iteration))
-    return maes, iters
+        if return_train_mae:
+            ptr = predict_y(booster, tr, features, target_mode, num_iteration=booster.best_iteration)
+            train_maes.append(float(np.mean(np.abs(ptr - tr[C.TARGET]))))
+    return (maes, iters, train_maes) if return_train_mae else (maes, iters)
 
 
 def baseline_cv(train, folds):
@@ -147,6 +151,8 @@ def train(feature_set="full", monotone=C.USE_MONOTONE, save=True, quick=False):
     extra = {k: int(best[k]) for k in GRID}
     params = make_params(obj, extra, features, monotone)
     n_rounds = int(round(best["best_iter_mean"]))
+    # cât memorează configurația aleasă: MAE pe fold-urile de antrenare față de cele de validare
+    _, _, fold_train_maes = run_cv(tr, features, params, folds, mode, return_train_mae=True)
 
     booster = fit_booster(tr, features, params, mode, n_rounds)
     meta = {
@@ -155,11 +161,14 @@ def train(feature_set="full", monotone=C.USE_MONOTONE, save=True, quick=False):
         "params": params, "num_boost_round": n_rounds,
         "cv_mae": float(best["cv_mae"]), "cv_mae_std": float(best["cv_mae_std"]),
         "cv_fold_maes": list(best["fold_maes"]), "b1_cv_mae": float(np.mean(b1_cv)), "b1_cv_fold_maes": b1_cv,
+        "cv_train_fold_mae": float(np.mean(fold_train_maes)),
+        "overfit_gap": float(best["cv_mae"] - np.mean(fold_train_maes)),
         "n_train_rows": int(len(tr)), "n_train_stations": int(tr["station_id"].nunique()),
         "n_train_zones": int(tr["zone_id"].nunique()),
     }
     print(f"\nCel mai bun: {mode} {json.dumps({**obj, **extra})} -> CV MAE {best['cv_mae']:.4f} "
-          f"(B1 {np.mean(b1_cv):.4f}), {n_rounds} runde")
+          f"(B1 {np.mean(b1_cv):.4f}), {n_rounds} runde; MAE pe fold-urile de antrenare "
+          f"{np.mean(fold_train_maes):.4f} (memorare {best['cv_mae'] - np.mean(fold_train_maes):.3f})")
     if save:
         C.MODELS.mkdir(parents=True, exist_ok=True)
         booster.save_model(str(C.MODEL_FILE))

@@ -7,9 +7,9 @@
     },
     "note_B1": "B1 prezice aceeași rată de ocupare pentru toate stațiile (std 0.0025)",
     "full": {
-      "cv_mae": 1.661631223451355,
-      "spearman_occupancy_rate": 0.22410538287511245,
-      "spearman_daily_demand": 0.7163316436686087,
+      "cv_mae": 1.6585432953839456,
+      "spearman_occupancy_rate": 0.2727866375450241,
+      "spearman_daily_demand": 0.725086714014983,
       "features": [
         "dist_nearest_station_m",
         "n_stations_500m",
@@ -45,10 +45,10 @@
       ]
     },
     "dedup_infrastructure": {
-      "cv_mae": 1.6731885594528273,
-      "cv_mae_reference": 1.6615631256079482,
-      "delta_vs_reference": 0.011625433844879574,
-      "folds_better_than_reference": 3,
+      "cv_mae": 1.6891782713722598,
+      "cv_mae_reference": 1.6585139400330509,
+      "delta_vs_reference": 0.03066433133920885,
+      "folds_better_than_reference": 1,
       "n_changed_stations": 967
     }
   },
@@ -58,16 +58,16 @@
     "n_sites": 113,
     "n_pairs_bigger_vs_smaller": 139,
     "share_pairs_bigger_has_higher_occupancy_real": 0.5539568345323741,
-    "share_pairs_bigger_has_higher_occupancy_model": 0.5035971223021583,
+    "share_pairs_bigger_has_higher_occupancy_model": 0.7050359712230215,
     "slope_occ_per_doubling_piles": {
       "within_site_real": 0.0009370456789496962,
       "within_site_real_ci95": [
         -0.02286302549697397,
         0.026218761056038334
       ],
-      "within_site_model": 3.538391085349751e-05,
+      "within_site_model": 0.010855781037583629,
       "between_sites_real": 0.020365419373303575,
-      "between_sites_model": 0.01746090771644155
+      "between_sites_model": 0.02296399837508354
     },
     "slope_occ_per_doubling_power": {
       "within_site_real": 0.0020848781629130187,
@@ -75,9 +75,9 @@
         -0.027040709552812885,
         0.059091796138554885
       ],
-      "within_site_model": 0.0330379136294167,
+      "within_site_model": 0.021029720529996195,
       "between_sites_real": 0.03294744890977894,
-      "between_sites_model": 0.032452507925100876
+      "between_sites_model": 0.03023589834659759
     },
     "mean_occupancy": 0.23980050139168443
   }

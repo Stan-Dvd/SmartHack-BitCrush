@@ -15,11 +15,11 @@
       "station_daily_spearman": 0.7751032974006802
     },
     "LGBM": {
-      "row_MAE": 1.7947298949050043,
-      "row_RMSE": 2.949105466734829,
-      "row_R2": 0.6968518488420156,
-      "station_daily_hours_MAE": 39.050957288928686,
-      "station_daily_spearman": 0.7676422215203155
+      "row_MAE": 1.841620399056377,
+      "row_RMSE": 3.0931964481817844,
+      "row_R2": 0.6665050045168149,
+      "station_daily_hours_MAE": 40.51838170933481,
+      "station_daily_spearman": 0.7585130322074878
     }
   },
   "info": {
@@ -33,8 +33,8 @@
       "feature_set": "full",
       "monotone": true,
       "target_mode": "occ",
-      "num_boost_round": 108,
-      "cv_mae": 1.6615631256079482,
+      "num_boost_round": 205,
+      "cv_mae": 1.6585139400330509,
       "b1_cv_mae": 1.8536727172452996
     },
     "model_params": {
