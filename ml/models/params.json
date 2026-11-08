@@ -1,0 +1,74 @@
+{
+  "features": [
+    "dist_nearest_station_m",
+    "n_stations_500m",
+    "n_stations_1km",
+    "n_stations_3km",
+    "competitor_piles_1km",
+    "pop_1km",
+    "poi_food_500m",
+    "poi_business_res_500m",
+    "poi_lifestyle_500m",
+    "n_piles",
+    "power_kw",
+    "hour",
+    "is_weekend"
+  ],
+  "feature_set": "full",
+  "monotone": true,
+  "monotone_dict": {
+    "power_kw": 1
+  },
+  "target_mode": "occ",
+  "params": {
+    "learning_rate": 0.05,
+    "num_leaves": 31,
+    "min_child_samples": 1000,
+    "feature_fraction": 0.8,
+    "bagging_fraction": 1.0,
+    "seed": 42,
+    "deterministic": true,
+    "force_col_wise": true,
+    "num_threads": 8,
+    "verbose": -1,
+    "objective": "tweedie",
+    "tweedie_variance_power": 1.2,
+    "metric": "l1",
+    "monotone_constraints": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ]
+  },
+  "num_boost_round": 108,
+  "cv_mae": 1.6615631256079482,
+  "cv_mae_std": 0.08976193002875311,
+  "cv_fold_maes": [
+    1.7615829688856317,
+    1.757331978210846,
+    1.6076607190572911,
+    1.6544128067637849,
+    1.5268271551221853
+  ],
+  "b1_cv_mae": 1.8536727172452996,
+  "b1_cv_fold_maes": [
+    2.220127372325045,
+    1.824253690120731,
+    1.8316651491591183,
+    1.7089548079188865,
+    1.6833625667027166
+  ],
+  "n_train_rows": 52805,
+  "n_train_stations": 1102,
+  "n_train_zones": 253
+}

@@ -1,0 +1,46 @@
+{
+  "metrics": {
+    "B0": {
+      "row_MAE": 3.268732215264113,
+      "row_RMSE": 5.334432348220601,
+      "row_R2": 0.00813917159748967,
+      "station_daily_hours_MAE": 74.25866351792696,
+      "station_daily_spearman": null
+    },
+    "B1": {
+      "row_MAE": 1.9302715639379664,
+      "row_RMSE": 3.4000189563284917,
+      "row_R2": 0.597063145042605,
+      "station_daily_hours_MAE": 41.59193558280943,
+      "station_daily_spearman": 0.7751032974006802
+    },
+    "LGBM": {
+      "row_MAE": 1.7947298949050043,
+      "row_RMSE": 2.949105466734829,
+      "row_R2": 0.6968518488420156,
+      "station_daily_hours_MAE": 39.050957288928686,
+      "station_daily_spearman": 0.7676422215203155
+    }
+  },
+  "info": {
+    "n_test_rows": 14576,
+    "n_test_stations": 304,
+    "n_test_zones": 61,
+    "n_test_stations_full": 302,
+    "y_mean_test": 3.75678941231097,
+    "daily_mean_test": 87.75857017947395,
+    "model": {
+      "feature_set": "full",
+      "monotone": true,
+      "target_mode": "occ",
+      "num_boost_round": 108,
+      "cv_mae": 1.6615631256079482,
+      "b1_cv_mae": 1.8536727172452996
+    },
+    "model_params": {
+      "objective": "tweedie",
+      "num_leaves": 31,
+      "min_child_samples": 1000
+    }
+  }
+}
