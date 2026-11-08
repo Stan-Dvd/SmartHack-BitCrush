@@ -4,7 +4,7 @@
       "chosen_rounds": 205,
       "train_mae_at_chosen": 1.458582945658202,
       "cv_mae_at_chosen": 1.6844553871620402,
-      "cv_mae_min": 1.6769932394306273,
+      "cv_mae_min": 1.6769932394306277,
       "round_of_min": 126,
       "train_mae_at_end": 1.454886764761285,
       "cv_mae_at_end": 1.686917659997608
@@ -12,7 +12,7 @@
     "model anterior (monoton doar pe putere)": {
       "chosen_rounds": 108,
       "train_mae_at_chosen": 1.0173377421841638,
-      "cv_mae_at_chosen": 1.680028978322842,
+      "cv_mae_at_chosen": 1.6800289783228415,
       "cv_mae_min": 1.6787645979190848,
       "round_of_min": 117,
       "train_mae_at_end": 0.46795483537922405,
@@ -37,10 +37,11 @@
     },
     "model anterior (monoton doar pe putere)": {
       "train": 1.0173377421841638,
-      "cv": 1.680028978322842,
+      "cv": 1.6800289783228415,
       "test": 1.7947298949050043
     }
   },
+  "noise_floor_mae": 0.14003022630791767,
   "learning_curve": [
     {
       "frac": 0.25,
@@ -86,6 +87,5 @@
       "cv_max": 1.6585139400330509,
       "repeats": 1
     }
-  ],
-  "noise_floor_mae": 0.14003022630791767
+  ]
 }
