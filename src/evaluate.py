@@ -14,7 +14,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from src import config as C
 from src.baselines import B0, B1
 from src.split import split_table
-from src.train import load_model
+from src.train import load_model, predict_y
 
 MODEL_NAMES = {"B0": "B0 (profil oraș)", "B1": "B1 (ocupare × n_piles)", "LGBM": "LightGBM"}
 
@@ -31,7 +31,7 @@ def predict_all(train: pd.DataFrame, test: pd.DataFrame) -> pd.DataFrame:
     out = test.copy()
     out["pred_B0"] = B0().fit(train).predict(test)
     out["pred_B1"] = B1().fit(train).predict(test)
-    out["pred_LGBM"] = booster.predict(test[meta["features"]])
+    out["pred_LGBM"] = predict_y(booster, test, meta["features"], meta.get("target_mode", "y"))
     return out
 
 
@@ -82,7 +82,8 @@ def evaluate():
         "n_test_zones": int(test["zone_id"].nunique()),
         "n_test_stations_full": int(len(daily_hours(pred, "y"))),
         "y_mean_test": float(test["y"].mean()), "daily_mean_test": float(daily_hours(pred, "y").mean()),
-        "model": {k: meta[k] for k in ("feature_set", "monotone", "num_boost_round", "cv_mae", "b1_cv_mae")},
+        "model": {k: meta.get(k) for k in ("feature_set", "monotone", "target_mode", "num_boost_round",
+                                           "cv_mae", "b1_cv_mae")},
         "model_params": {k: meta["params"][k] for k in ("objective", "num_leaves", "min_child_samples")},
     }
     out = {"metrics": metrics, "info": info}

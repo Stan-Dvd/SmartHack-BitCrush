@@ -104,8 +104,12 @@ LGBM_BASE_PARAMS = dict(
 MAX_BOOST_ROUNDS = 5000
 EARLY_STOPPING_ROUNDS = 100
 
-# constrângeri monotone (folosite doar cu `python -m src.train --monotone`)
-MONOTONE = {"n_piles": 1}
+# constrângeri monotone pe ieșirea modelului (rata de ocupare, în modul "occ"); dezactivabile cu --no-monotone.
+# power_kw: ocuparea nu scade când crește puterea (fără constrângere, PD avea o mică scădere la 6-7 kW).
+# n_piles rămâne neconstrâns: cererea prezisă e deja crescătoare în n_piles pe 100% din curbele ICE, iar
+# constrângerea „ocupare necrescătoare în n_piles” (randament descrescător) costă ~6% MAE (docs/experiments.md).
+USE_MONOTONE = True
+MONOTONE = {"power_kw": 1}
 
 # --- saturare ---
 SAT_OCC = 0.9  # ocupare prezisă la ora de vârf peste prag => stație saturată (prezis)

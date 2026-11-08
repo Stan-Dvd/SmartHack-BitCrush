@@ -19,7 +19,7 @@ from sklearn.metrics import precision_score, recall_score, roc_auc_score  # noqa
 
 from src import config as C  # noqa: E402
 from src.evaluate import daily_hours  # noqa: E402
-from src.train import load_model  # noqa: E402
+from src.train import load_model, predict_y  # noqa: E402
 
 # paletă (categorial: albastru / portocaliu / aqua), suprafață și text
 BLUE, ORANGE, AQUA, VIOLET = "#2a78d6", "#eb6834", "#1baf7a", "#6250d6"
@@ -37,9 +37,10 @@ plt.rcParams.update({
 class BoosterRegressor(RegressorMixin, BaseEstimator):
     """Wrapper minim peste lgb.Booster, ca sklearn.inspection să-l accepte ca estimator antrenat."""
 
-    def __init__(self, booster=None, features=None):
+    def __init__(self, booster=None, features=None, target_mode="y"):
         self.booster = booster
         self.features = features
+        self.target_mode = target_mode
 
     def fit(self, X, y=None):
         return self
@@ -49,7 +50,11 @@ class BoosterRegressor(RegressorMixin, BaseEstimator):
 
     def predict(self, X):
         X = pd.DataFrame(X, columns=self.features) if not isinstance(X, pd.DataFrame) else X
-        return self.booster.predict(X[self.features])
+        return predict_y(self.booster, X, self.features, self.target_mode)
+
+
+def fmt_num(v: float) -> str:
+    return f"{v / 1000:.0f}k" if abs(v) >= 10_000 else f"{v:.4g}"
 
 
 def save(fig, name):
@@ -78,7 +83,7 @@ def residuals_by_group(pred: pd.DataFrame) -> dict:
         q = pd.qcut(st.rank(method="first"), 4, labels=["Q1", "Q2", "Q3", "Q4"])
         edges = st.groupby(q, observed=True).agg(["min", "max"])
         g = pred.assign(q=pred["station_id"].map(q)).groupby("q", observed=True)[list(pred.columns)].apply(summarize)
-        g["range"] = [f"{edges.loc[i, 'min']:.4g}–{edges.loc[i, 'max']:.4g}" for i in g.index]
+        g["range"] = [f"{fmt_num(edges.loc[i, 'min'])}–{fmt_num(edges.loc[i, 'max'])}" for i in g.index]
         out[col] = g.reset_index().to_dict(orient="records")
         x = np.arange(len(g))
         ax.bar(x - 0.2, g["MAE_B1"], width=0.38, color=AQUA, label="B1")
@@ -104,7 +109,7 @@ def residuals_by_group(pred: pd.DataFrame) -> dict:
         ax.set_xlabel("ora")
         ax.set_xticks(range(0, 24, 3))
     axes[0].set_ylabel("puncte ocupate")
-    axes[0].legend(loc="upper left")
+    fig.legend(*axes[0].get_legend_handles_labels(), loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.1))
     save(fig, "residuals_by_hour.png")
     return out
 
@@ -176,7 +181,7 @@ def profiles(pred: pd.DataFrame, st: pd.DataFrame) -> dict:
 
 
 # ---------------------------------------------------------------- 4. SHAP
-def shap_analysis(booster, features, X: pd.DataFrame) -> dict:
+def shap_analysis(booster, features, X: pd.DataFrame, target_mode: str) -> dict:
     sv = shap.TreeExplainer(booster).shap_values(X[features])
     fig = plt.figure()
     shap.summary_plot(sv, X[features], show=False, max_display=len(features))
@@ -206,12 +211,14 @@ def shap_analysis(booster, features, X: pd.DataFrame) -> dict:
     save(fig, "shap_grouped.png")
     return {"mean_abs_shap": imp.round(4).to_dict(), "grouped_mean_abs_shap": grouped,
             "competition_sum_of_individual": float(imp[C.COMPETITION_FEATURES].sum()),
-            "note": "Pentru obiectivul tweedie, SHAP explică ieșirea brută (log al cererii)."}
+            "explained_output": ("rata de ocupare (ieșirea brută a modelului; pentru cross_entropy/tweedie e pe "
+                                 "scara log-odds/log)") if target_mode == "occ" else
+                                "y (ieșirea brută; pentru tweedie e pe scara log)"}
 
 
 # ---------------------------------------------------------------- 5. ICE / partial dependence
-def ice_checks(booster, features, X: pd.DataFrame) -> dict:
-    est = BoosterRegressor(booster, features)
+def ice_checks(booster, features, X: pd.DataFrame, target_mode: str) -> dict:
+    est = BoosterRegressor(booster, features, target_mode)
     sample = X[features].sample(n=min(1500, len(X)), random_state=C.SEED).astype(float)
     out = {}
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
@@ -261,9 +268,14 @@ def saturation(pred: pd.DataFrame, stats: pd.DataFrame) -> dict:
     st["sat_pred"] = st["peak_occ_pred"] > C.SAT_OCC
 
     def pr(real, predicted):
-        return {"n_real_positive": int(real.sum()), "n_pred_positive": int(predicted.sum()),
+        k = int(real.sum())
+        top_k = st["peak_occ_pred"].nlargest(k).index if k else []
+        return {"n_real_positive": k, "n_pred_positive": int(predicted.sum()),
                 "precision": float(precision_score(real, predicted, zero_division=0)),
                 "recall": float(recall_score(real, predicted, zero_division=0)),
+                # modelul prezice medii, deci rareori atinge pragul; clasarea e informația utilă
+                "precision_at_k_top_predicted": float(real.loc[top_k].mean()) if k else None,
+                "base_rate": float(real.mean()),
                 "roc_auc_of_peak_occ_pred": float(roc_auc_score(real, st["peak_occ_pred"]))
                 if 0 < real.sum() < len(real) else None}
 
@@ -302,13 +314,13 @@ def main():
     feats = pd.read_parquet(C.STATION_FEATURES_FILE)
     stats = pd.read_parquet(C.STATION_STATS_FILE)
 
-    out = {"model": {k: meta[k] for k in ("feature_set", "monotone", "num_boost_round")},
+    out = {"model": {k: meta.get(k) for k in ("feature_set", "monotone", "target_mode", "num_boost_round")},
            "residuals_by_group": residuals_by_group(pred)}
     top = top_stations(pred, feats, stats)
     out["top20"] = top["summary"]
     out["profiles"] = profiles(pred, top["station_level"])
-    out["shap"] = shap_analysis(booster, features, pred)
-    out["ice"] = ice_checks(booster, features, pred)
+    out["shap"] = shap_analysis(booster, features, pred, meta.get("target_mode", "y"))
+    out["ice"] = ice_checks(booster, features, pred, meta.get("target_mode", "y"))
     out["saturation"] = saturation(pred, stats)
     C.ANALYSIS_FILE.write_text(json.dumps(out, indent=2, ensure_ascii=False, default=float))
 

@@ -1,45 +1,46 @@
 {
   "metrics": {
     "B0": {
-      "row_MAE": 3.37293385710962,
-      "row_RMSE": 5.796276647985428,
-      "row_R2": 0.004716654428854605,
-      "station_daily_hours_MAE": 76.8367451177517,
+      "row_MAE": 3.268732215264113,
+      "row_RMSE": 5.334432348220601,
+      "row_R2": 0.00813917159748967,
+      "station_daily_hours_MAE": 74.25866351792696,
       "station_daily_spearman": null
     },
     "B1": {
-      "row_MAE": 2.0346666807909317,
-      "row_RMSE": 3.8487980207484367,
-      "row_R2": 0.5611675172385872,
-      "station_daily_hours_MAE": 44.05338770268504,
-      "station_daily_spearman": 0.7632120692422202
+      "row_MAE": 1.9302715639379664,
+      "row_RMSE": 3.4000189563284917,
+      "row_R2": 0.597063145042605,
+      "station_daily_hours_MAE": 41.59193558280943,
+      "station_daily_spearman": 0.7751032974006802
     },
     "LGBM": {
-      "row_MAE": 1.864503184418969,
-      "row_RMSE": 3.2834385698324495,
-      "row_R2": 0.6806210294401458,
-      "station_daily_hours_MAE": 39.84686930444666,
-      "station_daily_spearman": 0.7577915267108791
+      "row_MAE": 1.7947298949050043,
+      "row_RMSE": 2.949105466734829,
+      "row_R2": 0.6968518488420156,
+      "station_daily_hours_MAE": 39.050957288928686,
+      "station_daily_spearman": 0.7676422215203155
     }
   },
   "info": {
-    "n_test_rows": 14816,
-    "n_test_stations": 309,
-    "n_test_zones": 63,
-    "n_test_stations_full": 307,
-    "y_mean_test": 3.874080906632124,
-    "daily_mean_test": 90.62760286342119,
+    "n_test_rows": 14576,
+    "n_test_stations": 304,
+    "n_test_zones": 61,
+    "n_test_stations_full": 302,
+    "y_mean_test": 3.75678941231097,
+    "daily_mean_test": 87.75857017947395,
     "model": {
-      "feature_set": "base",
-      "monotone": false,
-      "num_boost_round": 147,
-      "cv_mae": 1.7821453986767346,
-      "b1_cv_mae": 1.8759933205685715
+      "feature_set": "full",
+      "monotone": true,
+      "target_mode": "occ",
+      "num_boost_round": 108,
+      "cv_mae": 1.6615631256079482,
+      "b1_cv_mae": 1.8536727172452996
     },
     "model_params": {
       "objective": "tweedie",
-      "num_leaves": 15,
-      "min_child_samples": 50
+      "num_leaves": 31,
+      "min_child_samples": 1000
     }
   }
 }

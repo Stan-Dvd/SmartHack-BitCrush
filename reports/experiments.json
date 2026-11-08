@@ -1,0 +1,270 @@
+{
+  "reference": {
+    "description": "configurația aleasă de src.train (occ, tweedie)",
+    "cv_mae": 1.6615631256079482,
+    "cv_mae_std": 0.08976193002875311,
+    "fold_maes": [
+      1.7615829688856317,
+      1.757331978210846,
+      1.6076607190572911,
+      1.6544128067637849,
+      1.5268271551221853
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.10363727633799402,
+    "iters": 107.8
+  },
+  "feature_set_base": {
+    "description": "fără populație și POI",
+    "cv_mae": 1.694015395601965,
+    "cv_mae_std": 0.13766201944686418,
+    "fold_maes": [
+      1.8637514266585258,
+      1.8048803877998592,
+      1.661512111954027,
+      1.6744176713411125,
+      1.4655153802563015
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.08613026461359241,
+    "iters": 76.4,
+    "delta_vs_reference": 0.03245226999401738,
+    "folds_better_than_reference": 1
+  },
+  "drop_poi_all": {
+    "description": "fără cele 3 feature-uri POI",
+    "cv_mae": 1.669324832474971,
+    "cv_mae_std": 0.11739298432655815,
+    "fold_maes": [
+      1.8076779005350367,
+      1.7725629611744171,
+      1.6198145404338948,
+      1.6686968404911209,
+      1.477871919740386
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09945007177118281,
+    "iters": 99.2,
+    "delta_vs_reference": 0.00776170686702331,
+    "folds_better_than_reference": 1
+  },
+  "drop_pop_1km": {
+    "description": "fără pop_1km",
+    "cv_mae": 1.6877867701357352,
+    "cv_mae_std": 0.10506187658530731,
+    "fold_maes": [
+      1.819504169607592,
+      1.7776919249551761,
+      1.6401843035061958,
+      1.6793581779562352,
+      1.5221952746534773
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.08949041843593819,
+    "iters": 68.0,
+    "delta_vs_reference": 0.02622364452778747,
+    "folds_better_than_reference": 1
+  },
+  "drop_competition": {
+    "description": "fără feature-urile de competiție",
+    "cv_mae": 1.7227946615320637,
+    "cv_mae_std": 0.11642367457530994,
+    "fold_maes": [
+      1.9013092861790706,
+      1.800705182466205,
+      1.6589898931608156,
+      1.6865364762152903,
+      1.5664324696389362
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.07060472676521379,
+    "iters": 81.8,
+    "delta_vs_reference": 0.061231535924115746,
+    "folds_better_than_reference": 0
+  },
+  "drop_power_kw": {
+    "description": "fără power_kw",
+    "cv_mae": 1.6890641844280576,
+    "cv_mae_std": 0.12479839656977403,
+    "fold_maes": [
+      1.8586542536591342,
+      1.7850980053820842,
+      1.608701354137846,
+      1.686630378185409,
+      1.506236930775815
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.0888012923132746,
+    "iters": 104.0,
+    "delta_vs_reference": 0.02750105882010989,
+    "folds_better_than_reference": 1
+  },
+  "target_y_tweedie": {
+    "description": "ținta y directă, tweedie 1.2 (abordarea inițială din plan)",
+    "cv_mae": 1.7756858498604025,
+    "cv_mae_std": 0.08348955408729569,
+    "fold_maes": [
+      1.9228966521828077,
+      1.8049532891820785,
+      1.7241336706322978,
+      1.7437517980414834,
+      1.682693839263346
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.04207154081697417,
+    "iters": 141.0,
+    "delta_vs_reference": 0.11412272425245487,
+    "folds_better_than_reference": 0
+  },
+  "target_y_l2": {
+    "description": "ținta y directă, L2",
+    "cv_mae": 1.7992200145321209,
+    "cv_mae_std": 0.08577539096596369,
+    "fold_maes": [
+      1.9328881839462828,
+      1.8505733938870463,
+      1.7345728976508323,
+      1.788320158752352,
+      1.6897454384240906
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.029375575422019296,
+    "iters": 118.6,
+    "delta_vs_reference": 0.13765688892417302,
+    "folds_better_than_reference": 0
+  },
+  "occ_l2": {
+    "description": "ocupare, L2",
+    "cv_mae": 1.6875644255024214,
+    "cv_mae_std": 0.10080775522915307,
+    "fold_maes": [
+      1.8118110264499647,
+      1.7870370870573669,
+      1.630887253736744,
+      1.6685226694044564,
+      1.5395640908635737
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.08961036659682187,
+    "iters": 76.8,
+    "delta_vs_reference": 0.026001299894473327,
+    "folds_better_than_reference": 0
+  },
+  "occ_cross_entropy": {
+    "description": "ocupare, cross-entropy",
+    "cv_mae": 1.6757821438199347,
+    "cv_mae_std": 0.10553921329003313,
+    "fold_maes": [
+      1.8107577298123567,
+      1.7695672835408554,
+      1.5927906463084904,
+      1.6776191593132486,
+      1.5281759001247222
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.0959665488790944,
+    "iters": 94.0,
+    "delta_vs_reference": 0.014219018211986834,
+    "folds_better_than_reference": 1
+  },
+  "lower_lr": {
+    "description": "learning_rate 0.02",
+    "cv_mae": 1.6738086521992912,
+    "cv_mae_std": 0.10297910086713712,
+    "fold_maes": [
+      1.8041833877504094,
+      1.775024441445348,
+      1.605957540618009,
+      1.6542775265478273,
+      1.5296003646348626
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09703118752985707,
+    "iters": 270.4,
+    "delta_vs_reference": 0.01224552659134348,
+    "folds_better_than_reference": 2
+  },
+  "lambda_l2_10": {
+    "description": "lambda_l2 = 10",
+    "cv_mae": 1.675130586777565,
+    "cv_mae_std": 0.10233628752935113,
+    "fold_maes": [
+      1.8056980796019209,
+      1.7715259076059926,
+      1.6132228789838954,
+      1.6580610066131658,
+      1.5271450610828499
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09631804406824407,
+    "iters": 108.4,
+    "delta_vs_reference": 0.01356746116961709,
+    "folds_better_than_reference": 0
+  },
+  "no_monotone": {
+    "description": "fără constrângeri monotone",
+    "cv_mae": 1.6751818983540185,
+    "cv_mae_std": 0.10648724061883111,
+    "fold_maes": [
+      1.8223582382257857,
+      1.7617081111435953,
+      1.6159556490563358,
+      1.6543563310659304,
+      1.5215311622784462
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.09629036303481453,
+    "iters": 135.4,
+    "delta_vs_reference": 0.013618772746070863,
+    "folds_better_than_reference": 2
+  },
+  "diminishing_returns_n_piles": {
+    "description": "ocupare necrescătoare în n_piles (randament descrescător per punct) + ocupare nedescrescătoare în power_kw",
+    "cv_mae": 1.765314135442663,
+    "cv_mae_std": 0.1117394825519929,
+    "fold_maes": [
+      1.9337606345825231,
+      1.8481029751332188,
+      1.7039901651265996,
+      1.722351486653372,
+      1.618365415717601
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.04766676500150702,
+    "iters": 77.6,
+    "delta_vs_reference": 0.10375100983471511,
+    "folds_better_than_reference": 0
+  },
+  "extra_fast_share": {
+    "description": "+ fast_share (ponderea punctelor DC); NU e în modelul final",
+    "cv_mae": 1.6583918458587674,
+    "cv_mae_std": 0.10368483707718175,
+    "fold_maes": [
+      1.768277846192016,
+      1.7797082108874736,
+      1.5832050480774529,
+      1.6479734491097162,
+      1.512794675027179
+    ],
+    "b1_cv_mae": 1.8536727172452996,
+    "gain_vs_b1": 0.10534808522009997,
+    "iters": 84.8,
+    "delta_vs_reference": -0.0031712797491803,
+    "folds_better_than_reference": 3
+  },
+  "spatial_blocks_kmeans50": {
+    "description": "CV pe 50 de blocuri spațiale KMeans (în loc de zone TAZ)",
+    "cv_mae": 1.704547361578841,
+    "cv_mae_std": 0.20548601614493328,
+    "fold_maes": [
+      1.9384555883024837,
+      1.955686384394102,
+      1.6262781536791007,
+      1.453838205717048,
+      1.5484784758014698
+    ],
+    "b1_cv_mae": 1.8581116852075923,
+    "gain_vs_b1": 0.08264536779531362,
+    "iters": 123.0
+  }
+}
